@@ -49,8 +49,8 @@ const TIERS: PricingTier[] = [
       "Pay only when you hire",
       "Full dashboard access",
     ],
-    cta: "Post a Job",
-    ctaHref: "/post-job",
+    cta: "Get Started",
+    ctaHref: "https://buy.stripe.com/eVqcN7gPd4XC5eU9Qv5AQ01",
   },
   {
     name: "Monthly Unlimited",
@@ -65,7 +65,7 @@ const TIERS: PricingTier[] = [
       "Everything in Pay-Per-Placement",
     ],
     cta: "Get Started",
-    ctaHref: "/post-job",
+    ctaHref: "https://buy.stripe.com/eVqeVfcyX9dS22I6Ej5AQ00",
     highlighted: true,
   },
   {
