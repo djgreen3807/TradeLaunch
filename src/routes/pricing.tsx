@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "~/components/Header";
+import { ScrollReveal } from "~/components/ScrollReveal";
 
 export const Route = createFileRoute("/pricing")({
+  head: () => ({
+    meta: [{ title: "Pricing — TradeLaunch" }],
+  }),
   component: Pricing,
 });
 
@@ -258,9 +262,9 @@ function Pricing() {
   return (
     <>
       <Header />
-      <PricingHeader />
-      <PricingCards />
-      <Faq />
+      <ScrollReveal><PricingHeader /></ScrollReveal>
+      <ScrollReveal delay={100}><PricingCards /></ScrollReveal>
+      <ScrollReveal><Faq /></ScrollReveal>
       <Footer />
     </>
   );
