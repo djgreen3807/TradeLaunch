@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #c2410c;
+  --color-brand-hover: #9a3412;
+  --color-brand-light: #fef0e8;
+  --color-charcoal: #1a1a1a;
+  --color-warm-cream: #fefcf8;
+  --color-warm-gray: #f5f0eb;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html,
+  body {
+    @apply bg-warm-cream text-charcoal antialiased;
+  }
+}
