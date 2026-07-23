@@ -29,6 +29,7 @@ interface PricingTier {
   name: string;
   price: string;
   priceLabel: string;
+  priceSubtext?: string;
   description: string;
   features: string[];
   cta: string;
@@ -39,7 +40,7 @@ interface PricingTier {
 const TIERS: PricingTier[] = [
   {
     name: "Pay-Per-Placement",
-    price: "$999",
+    price: "$299",
     priceLabel: "/placement",
     description: "Perfect for occasional hiring",
     features: [
@@ -54,8 +55,9 @@ const TIERS: PricingTier[] = [
   },
   {
     name: "Monthly Unlimited",
-    price: "$299",
+    price: "$149",
     priceLabel: "/month",
+    priceSubtext: "or $119/mo billed annually",
     description: "Best for contractors hiring regularly",
     features: [
       "Unlimited job postings",
@@ -150,6 +152,11 @@ function PricingCard({ tier }: { tier: PricingTier }) {
           <span className="text-base font-medium text-gray-400">{tier.priceLabel}</span>
         )}
       </div>
+
+      {/* Subtext */}
+      {tier.priceSubtext && (
+        <p className="mt-1 text-xs text-gray-400">{tier.priceSubtext}</p>
+      )}
 
       {/* Description */}
       <p className="mt-2 text-sm text-gray-500">{tier.description}</p>
