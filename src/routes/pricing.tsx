@@ -51,7 +51,7 @@ const TIERS: PricingTier[] = [
       "Full dashboard access",
     ],
     cta: "Get Started",
-    ctaHref: "https://buy.stripe.com/eVqcN7gPd4XC5eU9Qv5AQ01",
+    ctaHref: "https://buy.stripe.com/dRm9AV9mLeycbDie6L5AQ02",
   },
   {
     name: "Monthly Unlimited",
