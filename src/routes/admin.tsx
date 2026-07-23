@@ -419,6 +419,9 @@ function Dashboard() {
 /* ------------------------------------------------------------------ */
 
 export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [{ title: "Admin Dashboard — TradeLaunch" }],
+  }),
   component: AdminPage,
 });
 

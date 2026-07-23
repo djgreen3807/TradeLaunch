@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "~/components/Header";
+import { ScrollReveal } from "~/components/ScrollReveal";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [{ title: "TradeLaunch — Apprenticeship Marketplace for Skilled Trades" }],
+  }),
   component: Home,
 });
 
@@ -416,12 +420,12 @@ function Home() {
   return (
     <>
       <Header />
-      <Hero />
-      <StatsBar />
-      <HowItWorks />
-      <Trades />
-      <WhyContractors />
-      <ClosingCTA />
+      <ScrollReveal><Hero /></ScrollReveal>
+      <ScrollReveal delay={100}><StatsBar /></ScrollReveal>
+      <ScrollReveal><HowItWorks /></ScrollReveal>
+      <ScrollReveal><Trades /></ScrollReveal>
+      <ScrollReveal><WhyContractors /></ScrollReveal>
+      <ScrollReveal><ClosingCTA /></ScrollReveal>
       <Footer />
     </>
   );

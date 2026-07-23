@@ -343,5 +343,8 @@ function ApplyPage() {
 }
 
 export const Route = createFileRoute("/apply")({
+  head: () => ({
+    meta: [{ title: "Apply as an Apprentice — TradeLaunch" }],
+  }),
   component: ApplyPage,
 });

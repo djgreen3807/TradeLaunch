@@ -336,5 +336,8 @@ function PostJobPage() {
 }
 
 export const Route = createFileRoute("/post-job")({
+  head: () => ({
+    meta: [{ title: "Post an Apprenticeship — TradeLaunch" }],
+  }),
   component: PostJobPage,
 });
