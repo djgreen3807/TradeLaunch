@@ -159,7 +159,7 @@ function Hero() {
 
           <div className="flex flex-col items-center gap-1.5">
             <a
-              href="mailto:hello@tradelaunch.com?subject=Apprentice%20Application"
+              href="/apply"
               className="inline-flex rounded-xl border-2 border-brand bg-transparent px-8 py-3.5 text-base font-semibold text-brand transition-all hover:bg-brand-light"
             >
               Apply as an Apprentice
@@ -390,7 +390,7 @@ function Footer() {
               Post a Job
             </a>
             <a
-              href="mailto:hello@tradelaunch.com?subject=Apprentice%20Application"
+              href="/apply"
               className="transition-colors hover:text-white"
             >
               Browse Jobs
