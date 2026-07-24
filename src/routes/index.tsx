@@ -404,7 +404,7 @@ function Footer() {
             <a href="/background-check-consent" className="transition-colors hover:text-white">
               Background Check Consent
             </a>
-            <a href="mailto:hello@tradelaunch.com" className="transition-colors hover:text-white">
+            <a href="/contact" className="transition-colors hover:text-white">
               Contact
             </a>
           </div>
