@@ -171,7 +171,7 @@ function Hero() {
         {/* Micro-copy */}
         <p className="mt-6 text-sm text-gray-400">
           No placement fees for the first 30 days.{" "}
-          <a href="mailto:hello@tradelaunch.com" className="font-medium text-brand underline underline-offset-2 hover:text-brand-hover">
+          <a href="mailto:info@tradelaunch.work" className="font-medium text-brand underline underline-offset-2 hover:text-brand-hover">
             Talk to our team
           </a>
         </p>
@@ -355,7 +355,7 @@ function ClosingCTA() {
             Get Started
           </a>
           <a
-            href="mailto:hello@tradelaunch.com"
+            href="mailto:info@tradelaunch.work"
             className="inline-flex rounded-xl border-2 border-brand bg-transparent px-8 py-3.5 text-base font-semibold text-brand transition-all hover:bg-brand-light"
           >
             Talk to Our Team
@@ -364,8 +364,8 @@ function ClosingCTA() {
 
         <div className="mt-6 flex flex-col items-center gap-1 text-sm text-gray-400">
           <span>Response within 24 hours</span>
-          <a href="mailto:hello@tradelaunch.com" className="font-medium text-brand hover:text-brand-hover">
-            hello@tradelaunch.com
+          <a href="mailto:info@tradelaunch.work" className="font-medium text-brand hover:text-brand-hover">
+            info@tradelaunch.work
           </a>
         </div>
       </div>

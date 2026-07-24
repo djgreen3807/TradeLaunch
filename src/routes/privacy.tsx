@@ -126,8 +126,8 @@ function PrivacyPage() {
             </ul>
             <p>
               Contact{" "}
-              <a href="mailto:hello@tradelaunch.com" className="text-brand underline underline-offset-2 hover:text-brand-hover">
-                hello@tradelaunch.com
+              <a href="mailto:info@tradelaunch.work" className="text-brand underline underline-offset-2 hover:text-brand-hover">
+                info@tradelaunch.work
               </a>{" "}
               to exercise these rights.
             </p>
@@ -150,8 +150,8 @@ function PrivacyPage() {
           <LegalSection title="8. Contact">
             <p>
               Privacy questions:{" "}
-              <a href="mailto:hello@tradelaunch.com" className="text-brand underline underline-offset-2 hover:text-brand-hover">
-                hello@tradelaunch.com
+              <a href="mailto:info@tradelaunch.work" className="text-brand underline underline-offset-2 hover:text-brand-hover">
+                info@tradelaunch.work
               </a>
             </p>
           </LegalSection>

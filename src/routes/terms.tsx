@@ -149,8 +149,8 @@ function TermsPage() {
           <LegalSection title="9. Contact">
             <p>
               Questions about these terms:{" "}
-              <a href="mailto:hello@tradelaunch.com" className="text-brand underline underline-offset-2 hover:text-brand-hover">
-                hello@tradelaunch.com
+              <a href="mailto:info@tradelaunch.work" className="text-brand underline underline-offset-2 hover:text-brand-hover">
+                info@tradelaunch.work
               </a>
             </p>
           </LegalSection>

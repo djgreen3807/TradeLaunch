@@ -83,7 +83,7 @@ const TIERS: PricingTier[] = [
       "SLA & dedicated support team",
     ],
     cta: "Contact Us",
-    ctaHref: "mailto:hello@tradelaunch.com",
+    ctaHref: "mailto:info@tradelaunch.work",
   },
 ];
 
