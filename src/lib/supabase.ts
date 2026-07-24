@@ -64,9 +64,26 @@ function getSupabaseAnonKey(): string {
   throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
 }
 
-export const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+let _client: ReturnType<typeof createClient> | null = null;
+
+function getClient() {
+  if (!_client) {
+    _client = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  }
+  return _client;
+}
+
+/**
+ * Lazy Supabase client — only initialized on first use, not at module load time.
+ * Prevents crashes on Vercel preview deployments where env vars aren't set.
+ */
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_, prop) {
+    return (getClient() as any)[prop];
   },
 });
