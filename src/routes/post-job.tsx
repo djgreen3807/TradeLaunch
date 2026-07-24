@@ -79,6 +79,7 @@ function PostJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successContact, setSuccessContact] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Ensure the table exists on first load
   useEffect(() => {
@@ -104,6 +105,11 @@ function PostJobPage() {
       !form.description.trim()
     ) {
       setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
@@ -312,6 +318,26 @@ function PostJobPage() {
                 className="mt-1.5 block w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-charcoal shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
               />
             </div>
+
+            {/* Terms agreement checkbox */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-0.5 size-4 rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              <span className="text-sm text-gray-600 leading-relaxed">
+                I agree to the{" "}
+                <a href="/terms" target="_blank" className="text-brand underline underline-offset-2 hover:text-brand-hover">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" target="_blank" className="text-brand underline underline-offset-2 hover:text-brand-hover">
+                  Privacy Policy
+                </a>
+              </span>
+            </label>
 
             {/* Error display */}
             {error && (

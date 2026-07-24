@@ -395,6 +395,15 @@ function Footer() {
             >
               Browse Jobs
             </a>
+            <a href="/terms" className="transition-colors hover:text-white">
+              Terms of Service
+            </a>
+            <a href="/privacy" className="transition-colors hover:text-white">
+              Privacy Policy
+            </a>
+            <a href="/background-check-consent" className="transition-colors hover:text-white">
+              Background Check Consent
+            </a>
             <a href="mailto:hello@tradelaunch.com" className="transition-colors hover:text-white">
               Contact
             </a>

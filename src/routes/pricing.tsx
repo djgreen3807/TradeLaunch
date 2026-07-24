@@ -67,7 +67,7 @@ const TIERS: PricingTier[] = [
       "Everything in Pay-Per-Placement",
     ],
     cta: "Get Started",
-    ctaHref: "https://buy.stripe.com/eVqeVfcyX9dS22I6Ej5AQ00",
+    ctaHref: "https://buy.stripe.com/6oUdRb8iHdu8ePu2o35AQ03",
     highlighted: true,
   },
   {
@@ -90,7 +90,7 @@ const TIERS: PricingTier[] = [
 const FAQS = [
   {
     q: "Is there really no placement fee on Pay-Per-Placement?",
-    a: "You only pay the $999 flat fee when you successfully hire through TradeLaunch. No hidden percentages or surprise invoices.",
+    a: "You only pay the $299 flat fee when you successfully hire through TradeLaunch. No hidden percentages or surprise invoices.",
   },
   {
     q: "Can I switch plans?",
@@ -245,6 +245,15 @@ function Footer() {
             </a>
             <a href="/apply" className="transition-colors hover:text-white">
               Browse Jobs
+            </a>
+            <a href="/terms" className="transition-colors hover:text-white">
+              Terms of Service
+            </a>
+            <a href="/privacy" className="transition-colors hover:text-white">
+              Privacy Policy
+            </a>
+            <a href="/background-check-consent" className="transition-colors hover:text-white">
+              Background Check Consent
             </a>
             <a href="mailto:hello@tradelaunch.com" className="transition-colors hover:text-white">
               Contact
