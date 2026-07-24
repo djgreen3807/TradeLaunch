@@ -61,6 +61,15 @@ export const Route = createFileRoute("/api/create-match")({
             RETURNING id
           `;
 
+          // Update the application status to 'matched'
+          await db`
+            ALTER TABLE apprentice_applications
+            ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'new'
+          `;
+          await db`
+            UPDATE apprentice_applications SET status = 'matched' WHERE id = ${application_id}
+          `;
+
           return new Response(
             JSON.stringify({ success: true, id: result[0].id }),
             { status: 200, headers: { "Content-Type": "application/json" } },

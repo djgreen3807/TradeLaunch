@@ -339,6 +339,7 @@ function StatusBadge({ status }: { status: string }) {
     new: { label: "New", classes: "bg-orange-100 text-orange-700" },
     reviewed: { label: "Reviewed", classes: "bg-green-100 text-green-700" },
     contacted: { label: "Contacted", classes: "bg-blue-100 text-blue-700" },
+    matched: { label: "Matched", classes: "bg-purple-100 text-purple-700" },
   };
   const c = config[status] ?? config.new;
   return (
@@ -571,6 +572,7 @@ function ApplicationsTable({
                       <option value="new">🟠 New</option>
                       <option value="reviewed">🟢 Reviewed</option>
                       <option value="contacted">🔵 Contacted</option>
+                      <option value="matched">🟣 Matched</option>
                     </select>
                   </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(row.created_at)}</td>
@@ -668,6 +670,8 @@ function MatchModal({
         application_id: selectedApp,
       });
       if (result.success) {
+        // Also update the application status to "matched"
+        await updateApplicationStatus({ id: selectedApp, status: "matched" });
         setSuccess("Match created!");
         setTimeout(() => {
           onMatched();
@@ -806,8 +810,13 @@ function Dashboard() {
   };
 
   const handleMatchCreated = () => {
-    // Reload matches
-    getMatches().then(setMatches).catch(() => {});
+    // Reload matches and applications to reflect new statuses
+    Promise.all([getMatches(), getApplications()])
+      .then(([matchList, appList]) => {
+        setMatches(matchList);
+        setApplications(appList);
+      })
+      .catch(() => {});
   };
 
   const handleLogout = () => {

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/update-application-status")({
           );
         }
 
-        const validStatuses = ["new", "reviewed", "contacted"];
+        const validStatuses = ["new", "reviewed", "contacted", "matched"];
         if (!validStatuses.includes(status)) {
           return new Response(
             JSON.stringify({ error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` }),
