@@ -7,6 +7,7 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "~/styles/app.css?url";
+import { NotFound } from "~/components/NotFound";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,8 +17,16 @@ export const Route = createRootRoute({
       { title: "TradeLaunch — Apprenticeship Marketplace for Skilled Trades" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [
+      {
+        // Replace data-domain with your actual domain once registered
+        src: "https://plausible.io/js/script.js",
+        defer: true,
+        "data-domain": "tradelaunch.com",
+      },
+    ],
   }),
-  notFoundComponent: () => <div>Page not found</div>,
+  notFoundComponent: () => <NotFound />,
   component: RootComponent,
 });
 
