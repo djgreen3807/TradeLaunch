@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 export const Route = createFileRoute("/pricing")({
   component: Pricing,
@@ -224,45 +225,6 @@ function Faq() {
         </div>
       </div>
     </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Footer                                                              */
-/* ------------------------------------------------------------------ */
-
-function Footer() {
-  return (
-    <footer className="border-t border-gray-200/70 bg-charcoal text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
-            <a href="#" className="transition-colors hover:text-white">
-              For Contractors
-            </a>
-            <a href="/post-job" className="transition-colors hover:text-white">
-              Post a Job
-            </a>
-            <a href="/apply" className="transition-colors hover:text-white">
-              Browse Jobs
-            </a>
-            <a href="/terms" className="transition-colors hover:text-white">
-              Terms of Service
-            </a>
-            <a href="/privacy" className="transition-colors hover:text-white">
-              Privacy Policy
-            </a>
-            <a href="/background-check-consent" className="transition-colors hover:text-white">
-              Background Check Consent
-            </a>
-            <a href="/contact" className="transition-colors hover:text-white">
-              Contact
-            </a>
-          </div>
-          <p className="text-sm text-gray-500">© 2026 TradeLaunch</p>
-        </div>
-      </div>
-    </footer>
   );
 }
 

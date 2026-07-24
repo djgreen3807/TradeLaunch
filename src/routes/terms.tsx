@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
@@ -17,45 +18,6 @@ function LegalSection({ title, children }: { title: string; children: React.Reac
         {children}
       </div>
     </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Footer                                                              */
-/* ------------------------------------------------------------------ */
-
-function Footer() {
-  return (
-    <footer className="border-t border-gray-200/70 bg-charcoal text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
-            <a href="#" className="transition-colors hover:text-white">
-              For Contractors
-            </a>
-            <a href="/post-job" className="transition-colors hover:text-white">
-              Post a Job
-            </a>
-            <a href="/apply" className="transition-colors hover:text-white">
-              Browse Jobs
-            </a>
-            <a href="/terms" className="transition-colors hover:text-white">
-              Terms of Service
-            </a>
-            <a href="/privacy" className="transition-colors hover:text-white">
-              Privacy Policy
-            </a>
-            <a href="/background-check-consent" className="transition-colors hover:text-white">
-              Background Check Consent
-            </a>
-            <a href="/contact" className="transition-colors hover:text-white">
-              Contact
-            </a>
-          </div>
-          <p className="text-sm text-gray-500">© 2026 TradeLaunch</p>
-        </div>
-      </div>
-    </footer>
   );
 }
 
@@ -85,49 +47,63 @@ function TermsPage() {
 
           <LegalSection title="2. Description of Service">
             <p>
-              TradeLaunch is a two-sided marketplace connecting contractors seeking skilled trades
-              apprentices with individuals seeking apprenticeship opportunities. We provide a platform
-              for posting job opportunities, submitting applications, and facilitating connections.
-              TradeLaunch does not employ contractors or apprentices and is not responsible for the
-              terms of any employment or apprenticeship relationship formed through the platform.
+              TradeLaunch is an apprenticeship marketplace connecting contractors seeking skilled
+              trades apprentices with individuals seeking apprenticeship opportunities. We facilitate
+              connections but do not employ either party.
             </p>
           </LegalSection>
 
-          <LegalSection title="3. Contractor Responsibilities">
+          <LegalSection title="3. User Eligibility and Account Responsibilities">
             <p>
-              Contractors posting apprenticeship opportunities agree to: (a) provide accurate and
-              complete information about the role; (b) comply with all applicable labor laws, safety
-              regulations, and apprenticeship requirements; (c) not discriminate against applicants on
-              any basis prohibited by law; (d) pay the applicable placement fee upon successful hire as
-              defined in the pricing terms.
+              <strong>Contractors:</strong> Must be legitimate businesses or licensed tradespeople.
+              Contractors are responsible for providing accurate job descriptions, complying with all
+              applicable labor laws, and maintaining non-discriminatory hiring practices.
             </p>
-          </LegalSection>
-
-          <LegalSection title="4. Apprentice Responsibilities">
             <p>
-              Apprentices applying through TradeLaunch agree to: (a) provide truthful and accurate
-              information about their qualifications, experience, and credentials; (b) consent to
-              background checks as part of the verification process; (c) respond to contractor
-              communications in a timely manner.
+              <strong>Apprentices:</strong> Must be 18 years of age or older and legally eligible to
+              work in their jurisdiction. Apprentices are responsible for providing truthful
+              applications and responding to contractor communications in a timely manner.
             </p>
           </LegalSection>
 
-          <LegalSection title="5. Payment Terms">
+          <LegalSection title="4. Payment Terms">
+            <p>
+              <strong>Background Check Fee:</strong> A non-refundable $49 fee is charged when a
+              background check is initiated through our third-party provider (Checkr). This fee covers
+              the cost of the check and is not refundable once processing has begun, regardless of the
+              result.
+            </p>
             <p>
               <strong>Pay-Per-Placement:</strong> A flat fee of $299 is charged per successful
-              placement (defined as an apprentice completing at least 30 days on the job). No fee is
+              placement, defined as an apprentice completing at least 30 days on the job. No fee is
               charged if the placement is unsuccessful within the first 30 days.
             </p>
             <p>
-              <strong>Monthly Unlimited:</strong> $149/month for unlimited postings and placements.
-            </p>
-            <p>
-              <strong>Enterprise:</strong> Pricing is customized per organization.
+              <strong>Monthly Pro:</strong> $149/month for unlimited postings and placements ($119/month
+              when billed annually).
             </p>
             <p>All payments are processed securely through Stripe.</p>
           </LegalSection>
 
-          <LegalSection title="6. Limitation of Liability">
+          <LegalSection title="5. No Guarantee">
+            <p>
+              TradeLaunch facilitates connections between contractors and apprentices but does not
+              guarantee employment, placement, or hire outcomes. Use of the Marketplace does not ensure
+              that any contractor will hire any apprentice, or that any apprentice will accept any
+              position.
+            </p>
+          </LegalSection>
+
+          <LegalSection title="6. Background Check Disclosure">
+            <p>
+              Background checks are conducted through Checkr, a third-party provider. Results are
+              subject to Checkr&rsquo;s processes, timelines, and accuracy. TradeLaunch is not
+              responsible for Checkr&rsquo;s determinations or any delays in the background check
+              process.
+            </p>
+          </LegalSection>
+
+          <LegalSection title="7. Limitation of Liability">
             <p>
               TradeLaunch is a connection platform only. We do not guarantee placement outcomes,
               apprentice performance, or contractor satisfaction. To the fullest extent permitted by
@@ -135,18 +111,30 @@ function TermsPage() {
             </p>
           </LegalSection>
 
-          <LegalSection title="7. Termination">
+          <LegalSection title="8. Right to Suspend or Terminate">
             <p>
-              Either party may terminate use of the Marketplace at any time. TradeLaunch reserves the
-              right to suspend or terminate accounts for violation of these terms.
+              TradeLaunch reserves the right to suspend or terminate any account at its sole discretion
+              for violation of these terms, fraudulent activity, or any conduct that TradeLaunch deems
+              harmful to the Marketplace or its users.
             </p>
           </LegalSection>
 
-          <LegalSection title="8. Governing Law">
-            <p>These terms are governed by the laws of the State of Delaware.</p>
+          <LegalSection title="9. Governing Law">
+            <p>
+              {/* TODO: Replace "[Your State]" with the actual governing state */}
+              These terms are governed by the laws of the State of [Your State].
+            </p>
           </LegalSection>
 
-          <LegalSection title="9. Contact">
+          <LegalSection title="10. Changes to Terms">
+            <p>
+              We may update these terms from time to time. Material changes will be communicated via
+              email or through the Marketplace. Your continued use of TradeLaunch after any changes
+              constitutes acceptance of the updated terms.
+            </p>
+          </LegalSection>
+
+          <LegalSection title="11. Contact">
             <p>
               Questions about these terms:{" "}
               <a href="mailto:info@tradelaunch.work" className="text-brand underline underline-offset-2 hover:text-brand-hover">

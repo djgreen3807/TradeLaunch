@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -17,45 +18,6 @@ function LegalSection({ title, children }: { title: string; children: React.Reac
         {children}
       </div>
     </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Footer                                                              */
-/* ------------------------------------------------------------------ */
-
-function Footer() {
-  return (
-    <footer className="border-t border-gray-200/70 bg-charcoal text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
-            <a href="#" className="transition-colors hover:text-white">
-              For Contractors
-            </a>
-            <a href="/post-job" className="transition-colors hover:text-white">
-              Post a Job
-            </a>
-            <a href="/apply" className="transition-colors hover:text-white">
-              Browse Jobs
-            </a>
-            <a href="/terms" className="transition-colors hover:text-white">
-              Terms of Service
-            </a>
-            <a href="/privacy" className="transition-colors hover:text-white">
-              Privacy Policy
-            </a>
-            <a href="/background-check-consent" className="transition-colors hover:text-white">
-              Background Check Consent
-            </a>
-            <a href="/contact" className="transition-colors hover:text-white">
-              Contact
-            </a>
-          </div>
-          <p className="text-sm text-gray-500">© 2026 TradeLaunch</p>
-        </div>
-      </div>
-    </footer>
   );
 }
 
@@ -80,9 +42,12 @@ function PrivacyPage() {
             <p>We collect information you provide directly:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>Contact information (name, email, phone number)</li>
-              <li>Professional information (trade specialty, certifications, work history, years of experience)</li>
-              <li>Background check information (Social Security Number, date of birth) — collected only with explicit consent for verification purposes</li>
-              <li>Application details including location, personal statements, and job preferences</li>
+              <li>Professional information (trade specialty, certifications, work history)</li>
+              <li>
+                For apprentices: Social Security Number, date of birth, and address history for
+                background check purposes (collected only with explicit consent)
+              </li>
+              <li>Application details and job preferences</li>
             </ul>
           </LegalSection>
 
@@ -97,26 +62,41 @@ function PrivacyPage() {
             </ul>
           </LegalSection>
 
-          <LegalSection title="3. Data Storage &amp; Security">
+          <LegalSection title="3. How Data is Stored">
             <p>
-              Your data is stored on Neon (serverless Postgres) with encryption at rest and in transit.
-              We implement reasonable security measures to protect your personal information. Background
-              check data is transmitted securely to our verification partner (Checkr) and is not stored
-              beyond what is necessary for the verification process.
+              Data is stored on Supabase with encryption at rest and in transit. Background check data
+              is transmitted securely to Checkr and is not stored beyond what is necessary for the
+              verification process.
             </p>
           </LegalSection>
 
-          <LegalSection title="4. Data Sharing">
-            <p>We share your information only:</p>
+          <LegalSection title="4. Third Parties">
+            <p>We share your information only with the following third parties:</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>With contractors or apprentices as part of the matching process (limited to professional information, not SSN/DOB)</li>
-              <li>With Checkr for background verification (only with explicit consent)</li>
-              <li>With service providers who assist in operating the Marketplace (Stripe for payments)</li>
-              <li>As required by law</li>
+              <li>
+                <strong>Checkr</strong> — for background checks, only with your explicit consent
+              </li>
+              <li>
+                <strong>Stripe</strong> — for payment processing
+              </li>
+            </ul>
+            <p>No data is sold to third parties.</p>
+          </LegalSection>
+
+          <LegalSection title="5. Data Retention">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <strong>Application data:</strong> Retained for 2 years from last activity
+              </li>
+              <li>
+                <strong>Background check data:</strong> Retained only as long as necessary for the
+                verification process
+              </li>
+              <li>Users may request earlier deletion of their data at any time</li>
             </ul>
           </LegalSection>
 
-          <LegalSection title="5. Your Rights">
+          <LegalSection title="6. Your Rights">
             <p>You may:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>Request access to your personal data</li>
@@ -133,21 +113,21 @@ function PrivacyPage() {
             </p>
           </LegalSection>
 
-          <LegalSection title="6. Cookies">
+          <LegalSection title="7. Cookies">
             <p>
               We use essential cookies for site functionality. We do not currently use tracking or
               advertising cookies.
             </p>
           </LegalSection>
 
-          <LegalSection title="7. Changes to This Policy">
+          <LegalSection title="8. Changes to This Policy">
             <p>
               We will notify users of material changes to this privacy policy via email or through the
               Marketplace.
             </p>
           </LegalSection>
 
-          <LegalSection title="8. Contact">
+          <LegalSection title="9. Contact">
             <p>
               Privacy questions:{" "}
               <a href="mailto:info@tradelaunch.work" className="text-brand underline underline-offset-2 hover:text-brand-hover">
