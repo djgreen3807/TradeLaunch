@@ -22,7 +22,7 @@ export const Route = createRootRoute({
         // Replace data-domain with your actual domain once registered
         src: "https://plausible.io/js/script.js",
         defer: true,
-        "data-domain": "tradelaunch.com",
+        "data-domain": "tradelaunch.work",
       },
     ],
   }),
