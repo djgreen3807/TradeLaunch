@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "~/lib/supabase";
 import { sql } from "~/db";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -193,6 +194,7 @@ function DashboardPage() {
         <main className="mx-auto max-w-4xl px-4 py-20 text-center">
           <p className="text-gray-500">Loading...</p>
         </main>
+        <Footer />
       </>
     );
   }
@@ -393,6 +395,7 @@ function DashboardPage() {
             </div>
           ))}
       </main>
+      <Footer />
     </>
   );
 }

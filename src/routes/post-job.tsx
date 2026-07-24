@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { sql } from "~/db";
 import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 /* ------------------------------------------------------------------ */
 /*  Server functions                                                   */
@@ -198,14 +199,15 @@ function PostJobPage() {
             )}
           </div>
         </main>
-      </>
-    );
-  }
+        <Footer />
+        </>
+        );
+        }
 
-  return (
-    <>
-      <Header />
-      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+        return (
+        <>
+        <Header />
+        <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
         {/* Page heading */}
         <div className="mb-10 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
@@ -388,11 +390,12 @@ function PostJobPage() {
             </button>
           </form>
         </div>
-      </main>
-    </>
-  );
-}
-
-export const Route = createFileRoute("/post-job")({
+        </main>
+        <Footer />
+      </>
+    );
+  }
+  
+  export const Route = createFileRoute("/post-job")({
   component: PostJobPage,
 });

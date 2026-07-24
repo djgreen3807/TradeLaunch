@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useCallback } from "react";
 import { sql } from "~/db";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 /* ------------------------------------------------------------------ */
 /*  Server functions                                                   */
@@ -973,6 +974,7 @@ function Dashboard() {
           onMatched={handleMatchCreated}
         />
       )}
+      <Footer />
     </>
   );
 }

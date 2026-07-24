@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -123,6 +124,7 @@ function LoginPage() {
           </p>
         </div>
       </main>
+      <Footer />
     </>
   );
 }

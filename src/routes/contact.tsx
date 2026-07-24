@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "~/components/Header";
+import { Footer } from "~/components/Footer";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -111,6 +112,7 @@ function ContactPage() {
             </a>
           </div>
         </main>
+        <Footer />
       </>
     );
   }
@@ -226,6 +228,7 @@ function ContactPage() {
           </form>
         </div>
       </main>
+      <Footer />
     </>
   );
 }
