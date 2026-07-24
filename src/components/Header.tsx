@@ -1,7 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "~/lib/supabase";
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check auth on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setLoggedIn(!!session);
+    });
+
+    // Listen for auth changes
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session);
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleLogout(e: React.MouseEvent) {
+    e.preventDefault();
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-white/80 backdrop-blur-md">
@@ -29,13 +53,41 @@ export function Header() {
           </span>
         </nav>
 
-        {/* Desktop CTA */}
-        <a
-          href="/post-job"
-          className="hidden rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover md:inline-flex"
-        >
-          Get Started
-        </a>
+        {/* Desktop CTAs */}
+        <div className="hidden items-center gap-3 md:flex">
+          {loggedIn ? (
+            <>
+              <a
+                href="/dashboard"
+                className="text-sm font-medium text-gray-600 transition-colors hover:text-charcoal"
+              >
+                Dashboard
+              </a>
+              <a
+                href="#"
+                onClick={handleLogout}
+                className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              >
+                Logout
+              </a>
+            </>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="text-sm font-medium text-gray-600 transition-colors hover:text-charcoal"
+              >
+                Login
+              </a>
+              <a
+                href="/post-job"
+                className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
+              >
+                Get Started
+              </a>
+            </>
+          )}
+        </div>
 
         {/* Mobile hamburger */}
         <button
@@ -74,12 +126,44 @@ export function Header() {
                 For Contractors
               </span>
             </div>
-            <a
-              href="/post-job"
-              className="mt-2 inline-flex justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
-            >
-              Get Started
-            </a>
+            {loggedIn ? (
+              <>
+                <a
+                  href="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 inline-flex justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
+                >
+                  Dashboard
+                </a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    setMobileOpen(false);
+                    handleLogout(e);
+                  }}
+                  className="inline-flex justify-center rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm"
+                >
+                  Logout
+                </a>
+              </>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 inline-flex justify-center rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm"
+                >
+                  Login
+                </a>
+                <a
+                  href="/post-job"
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
+                >
+                  Get Started
+                </a>
+              </>
+            )}
           </nav>
         </div>
       )}

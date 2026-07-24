@@ -23,6 +23,7 @@ export const Route = createFileRoute("/api/submit-job")({
         const phone = typeof body.phone === "string" ? body.phone.trim() : "";
         const location = typeof body.location === "string" ? body.location.trim() : "";
         const budget = typeof body.budget === "string" ? body.budget.trim() : "";
+        const contractor_id = typeof body.contractor_id === "string" ? body.contractor_id.trim() : null;
 
         // Validate required fields
         const missing: string[] = [];
@@ -41,16 +42,23 @@ export const Route = createFileRoute("/api/submit-job")({
 
         try {
           const db = sql();
+
+          // Ensure contractor_id column exists
           await db`
-            INSERT INTO job_postings (company_name, contact_name, email, phone, trade, description, location, budget)
+            ALTER TABLE job_postings
+            ADD COLUMN IF NOT EXISTS contractor_id UUID
+          `;
+
+          await db`
+            INSERT INTO job_postings (company_name, contact_name, email, phone, trade, description, location, budget, contractor_id)
             VALUES (${company_name}, ${contact_name}, ${email}, ${
               phone || null
             }, ${trade}, ${description}, ${location || null}, ${
               budget || null
-            })
+            }, ${contractor_id || null})
           `;
           return new Response(
-            JSON.stringify({ success: true, contact_name }),
+            JSON.stringify({ success: true, contact_name, contractor_id: contractor_id || null }),
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
         } catch (err) {

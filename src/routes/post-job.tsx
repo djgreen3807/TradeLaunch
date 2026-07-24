@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { sql } from "~/db";
+import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 
 /* ------------------------------------------------------------------ */
@@ -24,6 +25,10 @@ const ensureTable = createServerFn().handler(async () => {
       budget TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `;
+  await db`
+    ALTER TABLE job_postings
+    ADD COLUMN IF NOT EXISTS contractor_id UUID
   `;
   return { ok: true };
 });
@@ -80,11 +85,17 @@ function PostJobPage() {
   const [error, setError] = useState("");
   const [successContact, setSuccessContact] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [contractorId, setContractorId] = useState<string | null>(null);
 
-  // Ensure the table exists on first load
+  // Ensure the table exists on first load, and check auth
   useEffect(() => {
     ensureTable().catch(() => {
       // Silently ignore — table creation will be retried on submit
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setContractorId(session.user.id);
+      }
     });
   }, []);
 
@@ -115,10 +126,14 @@ function PostJobPage() {
 
     setSubmitting(true);
     try {
+      const payload: Record<string, unknown> = { ...form };
+      if (contractorId) {
+        payload.contractor_id = contractorId;
+      }
       const res = await fetch("/api/submit-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const result = await res.json();
       if (!res.ok || result.error) {
@@ -158,12 +173,29 @@ function PostJobPage() {
             <p className="mt-3 text-lg leading-relaxed text-gray-600">
               We&rsquo;ll review your posting and get back to you within 24 hours.
             </p>
-            <a
-              href="/"
-              className="mt-8 inline-flex rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
-            >
-              Back to Homepage
-            </a>
+            {contractorId ? (
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <a
+                  href="/dashboard"
+                  className="inline-flex rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
+                >
+                  Go to your dashboard
+                </a>
+                <a
+                  href="/"
+                  className="text-sm font-medium text-gray-500 underline underline-offset-2 hover:text-charcoal"
+                >
+                  Back to Homepage
+                </a>
+              </div>
+            ) : (
+              <a
+                href="/"
+                className="mt-8 inline-flex rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
+              >
+                Back to Homepage
+              </a>
+            )}
           </div>
         </main>
       </>
