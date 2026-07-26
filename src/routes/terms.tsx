@@ -122,7 +122,7 @@ function TermsPage() {
           <LegalSection title="9. Governing Law">
             <p>
               {/* TODO: Replace "[Your State]" with the actual governing state */}
-              These terms are governed by the laws of the State of [Your State].
+              These terms are governed by the laws of the State of Tennessee.
             </p>
           </LegalSection>
 
