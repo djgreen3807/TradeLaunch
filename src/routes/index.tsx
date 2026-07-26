@@ -131,19 +131,22 @@ function Hero() {
       <div className="mx-auto max-w-3xl text-center">
         {/* Eyebrow */}
         <span className="inline-flex items-center rounded-full border border-brand/30 bg-brand-light px-4 py-1.5 text-xs font-semibold tracking-wide text-brand">
-          Vetted · Structured · Paid
+          Connecting Skilled Trades with the Next Generation
         </span>
 
         {/* Headline */}
         <h1 className="mt-6 text-4xl font-bold tracking-tight text-charcoal sm:text-5xl lg:text-6xl">
-          The apprenticeship marketplace built for trades.
+          Connecting Skilled Trades with the Next Generation of Talent
         </h1>
 
-        {/* Subhead */}
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-600 sm:text-xl">
-          Skip the $5K–$8K agency fees. TradeLaunch connects contractors directly with pre-vetted
-          apprentices in electrical, plumbing, HVAC, welding, and more — backed by a model investors
-          trust.
+        {/* Brand tagline */}
+        <p className="mt-4 text-xl font-semibold text-brand sm:text-2xl">
+          The apprenticeship marketplace built for trades.
+        </p>
+
+        {/* Supporting text */}
+        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-gray-600 sm:text-xl">
+          TradeLaunch connects contractors with motivated apprentices while helping individuals launch their careers in the skilled trades.
         </p>
 
         {/* CTA Buttons */}
@@ -153,7 +156,7 @@ function Hero() {
               href="/post-job"
               className="inline-flex rounded-xl bg-brand px-8 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-brand-hover hover:shadow-lg"
             >
-              Post an Apprenticeship
+              Post a Job
             </a>
             <span className="text-xs text-gray-400">For contractors</span>
           </div>
@@ -163,7 +166,7 @@ function Hero() {
               href="/apply"
               className="inline-flex rounded-xl border-2 border-brand bg-transparent px-8 py-3.5 text-base font-semibold text-brand transition-all hover:bg-brand-light"
             >
-              Apply as an Apprentice
+              Find Apprenticeships
             </a>
             <span className="text-xs text-gray-400">For apprentices</span>
           </div>
