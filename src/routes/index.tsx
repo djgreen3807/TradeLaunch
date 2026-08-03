@@ -136,17 +136,12 @@ function Hero() {
 
         {/* Headline */}
         <h1 className="mt-6 text-4xl font-bold tracking-tight text-charcoal sm:text-5xl lg:text-6xl">
-          Connecting Skilled Trades with the Next Generation of Talent
+          The apprenticeship marketplace built for trades.
         </h1>
 
-        {/* Brand tagline */}
-        <p className="mt-4 text-xl font-semibold text-brand sm:text-2xl">
-          The apprenticeship marketplace built for trades.
-        </p>
-
-        {/* Supporting text */}
+        {/* Supporting headline */}
         <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-gray-600 sm:text-xl">
-          TradeLaunch connects contractors with motivated apprentices while helping individuals launch their careers in the skilled trades.
+          TradeLaunch connects contractors directly with motivated apprentices in electrical, plumbing, HVAC, welding, and more — helping companies build their workforce and helping the next generation launch their careers.
         </p>
 
         {/* CTA Buttons */}
@@ -156,7 +151,7 @@ function Hero() {
               href="/post-job"
               className="inline-flex rounded-xl bg-brand px-8 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-brand-hover hover:shadow-lg"
             >
-              Post a Job
+              Find Apprentices
             </a>
             <span className="text-xs text-gray-400">For contractors</span>
           </div>
@@ -166,7 +161,7 @@ function Hero() {
               href="/apply"
               className="inline-flex rounded-xl border-2 border-brand bg-transparent px-8 py-3.5 text-base font-semibold text-brand transition-all hover:bg-brand-light"
             >
-              Find Apprenticeships
+              Find Opportunities
             </a>
             <span className="text-xs text-gray-400">For apprentices</span>
           </div>

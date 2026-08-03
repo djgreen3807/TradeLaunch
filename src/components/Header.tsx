@@ -1,9 +1,30 @@
 import { useState, useEffect } from "react";
 import { supabase } from "~/lib/supabase";
 
+function getAudienceFromPath(pathname: string): "apprentices" | "contractors" {
+  if (pathname === "/post-job") return "contractors";
+  if (pathname === "/apply") return "apprentices";
+  return "apprentices"; // default
+}
+
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [audience, setAudience] = useState<"apprentices" | "contractors">(() => {
+    if (typeof window !== "undefined") {
+      return getAudienceFromPath(window.location.pathname);
+    }
+    return "apprentices";
+  });
+
+  // Sync audience state when URL changes (e.g. browser back/forward)
+  useEffect(() => {
+    const onPopState = () => {
+      setAudience(getAudienceFromPath(window.location.pathname));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     // Check auth on mount
@@ -27,6 +48,12 @@ export function Header() {
     window.location.href = "/";
   }
 
+  function handleToggleAudience(newAudience: "apprentices" | "contractors") {
+    setAudience(newAudience);
+  }
+
+  const getStartedHref = audience === "apprentices" ? "/apply" : "/post-job";
+
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -48,8 +75,28 @@ export function Header() {
             Pricing
           </a>
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs">
-            <span className="rounded-full bg-white px-3 py-1 shadow-sm">Apprentices</span>
-            <span className="px-3 py-1 text-gray-500">For Contractors</span>
+            <a
+              href="/apply"
+              onClick={() => handleToggleAudience("apprentices")}
+              className={`cursor-pointer rounded-full px-3 py-1 transition-colors ${
+                audience === "apprentices"
+                  ? "bg-white shadow-sm text-charcoal font-semibold"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Apprentices
+            </a>
+            <a
+              href="/post-job"
+              onClick={() => handleToggleAudience("contractors")}
+              className={`cursor-pointer rounded-full px-3 py-1 transition-colors ${
+                audience === "contractors"
+                  ? "bg-white shadow-sm text-charcoal font-semibold"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              For Contractors
+            </a>
           </span>
         </nav>
 
@@ -80,7 +127,7 @@ export function Header() {
                 Login
               </a>
               <a
-                href="/post-job"
+                href={getStartedHref}
                 className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
               >
                 Get Started
@@ -119,12 +166,34 @@ export function Header() {
               Pricing
             </a>
             <div className="flex gap-2 pt-2">
-              <span className="rounded-full border border-brand/30 bg-brand-light px-4 py-1.5 text-xs font-semibold text-brand">
+              <a
+                href="/apply"
+                onClick={() => {
+                  handleToggleAudience("apprentices");
+                  setMobileOpen(false);
+                }}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                  audience === "apprentices"
+                    ? "border border-brand/30 bg-brand-light text-brand"
+                    : "border border-gray-200 bg-gray-50 text-gray-500"
+                }`}
+              >
                 Apprentices
-              </span>
-              <span className="rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 text-xs text-gray-500">
+              </a>
+              <a
+                href="/post-job"
+                onClick={() => {
+                  handleToggleAudience("contractors");
+                  setMobileOpen(false);
+                }}
+                className={`rounded-full px-4 py-1.5 text-xs transition-colors ${
+                  audience === "contractors"
+                    ? "border border-brand/30 bg-brand-light text-brand font-semibold"
+                    : "border border-gray-200 bg-gray-50 text-gray-500"
+                }`}
+              >
                 For Contractors
-              </span>
+              </a>
             </div>
             {loggedIn ? (
               <>
@@ -156,7 +225,7 @@ export function Header() {
                   Login
                 </a>
                 <a
-                  href="/post-job"
+                  href={getStartedHref}
                   onClick={() => setMobileOpen(false)}
                   className="inline-flex justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
                 >

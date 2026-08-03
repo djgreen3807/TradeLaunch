@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sql } from "~/db";
+import { notifyNewContact } from "~/lib/email";
 
 export const Route = createFileRoute("/api/submit-contact")({
   server: {
@@ -53,6 +54,9 @@ export const Route = createFileRoute("/api/submit-contact")({
             INSERT INTO contact_messages (name, email, subject, message)
             VALUES (${name}, ${email}, ${subject}, ${message})
           `;
+
+          // Send email notification
+          await notifyNewContact({ name, email, subject, message });
 
           return new Response(
             JSON.stringify({ success: true, name }),

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useCallback } from "react";
 import { sql } from "~/db";
+import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
 
@@ -196,28 +197,107 @@ const createMatch = createServerFn().handler(
 );
 
 /* ------------------------------------------------------------------ */
-/*  Auth helpers                                                       */
+/*  Auth gate — Supabase sign-in                                       */
 /* ------------------------------------------------------------------ */
 
-const AUTH_KEY = "tradelaunch_admin_auth";
-const ADMIN_PASSWORD = "tradelaunch2026";
+function AdminLoginGate({ onSuccess }: { onSuccess: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-function isAuthenticated(): boolean {
-  if (typeof window === "undefined") return false;
-  return sessionStorage.getItem(AUTH_KEY) === "true";
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
+      } else {
+        onSuccess();
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Authentication failed.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-warm-cream px-4">
+      <div className="w-full max-w-sm">
+        <div className="rounded-2xl border border-gray-200/70 bg-white p-8 shadow-sm">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-charcoal">
+              Trade<span className="text-brand">Launch</span>
+            </h1>
+            <p className="mt-2 text-sm text-gray-500">Admin Dashboard</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email
+              </label>
+              <input
+                id="admin-email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                placeholder="info@tradelaunch.work"
+                autoFocus
+                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-charcoal placeholder-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
+              <input
+                id="admin-password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                placeholder="Enter your password"
+                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-charcoal placeholder-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none transition-colors"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }
-
-function setAuthenticated(): void {
-  sessionStorage.setItem(AUTH_KEY, "true");
-}
-
-function clearAuth(): void {
-  sessionStorage.removeItem(AUTH_KEY);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Format helpers                                                     */
-/* ------------------------------------------------------------------ */
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -820,8 +900,8 @@ function Dashboard() {
       .catch(() => {});
   };
 
-  const handleLogout = () => {
-    clearAuth();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     window.location.href = "/";
   };
 
@@ -988,14 +1068,39 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const [authed, setAuthed] = useState(() => isAuthenticated());
+  const [authed, setAuthed] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    // Check for existing Supabase session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setAuthed(true);
+      }
+      setChecking(false);
+    });
+  }, []);
 
   const handleAuthSuccess = useCallback(() => {
     setAuthed(true);
   }, []);
 
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-warm-cream">
+        <div className="flex items-center gap-3 text-gray-500">
+          <svg className="size-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span className="text-sm">Checking session...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!authed) {
-    return <PasswordGate onSuccess={handleAuthSuccess} />;
+    return <AdminLoginGate onSuccess={handleAuthSuccess} />;
   }
 
   return <Dashboard />;

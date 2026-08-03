@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { sql } from "~/db";
@@ -84,9 +84,9 @@ function PostJobPage() {
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [successContact, setSuccessContact] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [contractorId, setContractorId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Ensure the table exists on first load, and check auth
   useEffect(() => {
@@ -140,7 +140,7 @@ function PostJobPage() {
       if (!res.ok || result.error) {
         setError(result.error || "Something went wrong. Please try again.");
       } else {
-        setSuccessContact(result.contact_name);
+        navigate({ to: "/thank-you" });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -150,61 +150,7 @@ function PostJobPage() {
     }
   }
 
-  // Success state
-  if (successContact) {
-    return (
-      <>
-        <Header />
-        <main className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 sm:py-28">
-          <div className="rounded-2xl border border-green-200 bg-green-50 p-10 shadow-sm">
-            <svg
-              className="mx-auto size-14 text-green-600"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-              />
-            </svg>
-            <h2 className="mt-5 text-2xl font-bold text-charcoal">Thanks, {successContact}!</h2>
-            <p className="mt-3 text-lg leading-relaxed text-gray-600">
-              We&rsquo;ll review your posting and get back to you within 24 hours.
-            </p>
-            {contractorId ? (
-              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <a
-                  href="/dashboard"
-                  className="inline-flex rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
-                >
-                  Go to your dashboard
-                </a>
-                <a
-                  href="/"
-                  className="text-sm font-medium text-gray-500 underline underline-offset-2 hover:text-charcoal"
-                >
-                  Back to Homepage
-                </a>
-              </div>
-            ) : (
-              <a
-                href="/"
-                className="mt-8 inline-flex rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover"
-              >
-                Back to Homepage
-              </a>
-            )}
-          </div>
-        </main>
-        <Footer />
-        </>
-        );
-        }
-
-        return (
+  return (
         <>
         <Header />
         <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">

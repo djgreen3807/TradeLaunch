@@ -18,10 +18,12 @@ function decodeBase64(str: string): string {
 
 /**
  * Extract the Supabase project ref from an anon/service_role key JWT.
+ * Tries server-side env vars first, then Vite-inlined client vars.
  */
 function getProjectRef(): string {
-  // The anon key JWT lives in SUPABASE_SERVICE_ROLE_KEY (env naming is mixed)
-  const anonKeyJwt = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Server-side: try SUPABASE_SERVICE_ROLE_KEY JWT
+  const anonKeyJwt =
+    typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY;
   if (anonKeyJwt) {
     try {
       const parts = anonKeyJwt.split(".");
@@ -33,8 +35,9 @@ function getProjectRef(): string {
       // fall through
     }
   }
-  // Fallback: try SUPABASE_PROJECT_REF JWT
-  const serviceJwt = process.env.SUPABASE_PROJECT_REF;
+  // Server-side: try SUPABASE_PROJECT_REF JWT
+  const serviceJwt =
+    typeof process !== "undefined" && process.env?.SUPABASE_PROJECT_REF;
   if (serviceJwt) {
     try {
       const parts = serviceJwt.split(".");
@@ -46,21 +49,43 @@ function getProjectRef(): string {
       // fall through
     }
   }
+  // Client-side: extract from VITE_SUPABASE_URL
+  const viteUrl =
+    typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL;
+  if (viteUrl && typeof viteUrl === "string") {
+    const match = viteUrl.match(/https:\/\/(.+)\.supabase\.co/);
+    if (match) return match[1];
+  }
   throw new Error("Cannot determine Supabase project ref from environment");
 }
 
 function getSupabaseUrl(): string {
-  // SUPABASE_URL env var currently holds a publishable key, not a URL
-  const url = process.env.SUPABASE_URL;
-  if (url && url.startsWith("http")) return url;
+  // Client-side: use Vite-inlined URL
+  const viteUrl =
+    typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL;
+  if (viteUrl && typeof viteUrl === "string") return viteUrl;
+
+  // Server-side: try SUPABASE_URL directly
+  const url =
+    typeof process !== "undefined" && process.env?.SUPABASE_URL;
+  if (url && typeof url === "string" && url.startsWith("http")) return url;
+
+  // Server-side: construct from JWT
   const ref = getProjectRef();
   return `https://${ref}.supabase.co`;
 }
 
 function getSupabaseAnonKey(): string {
-  // The actual anon key JWT is in SUPABASE_SERVICE_ROLE_KEY
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Client-side: use Vite-inlined anon key
+  const viteKey =
+    typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
+  if (viteKey && typeof viteKey === "string") return viteKey;
+
+  // Server-side: the anon key JWT is in SUPABASE_SERVICE_ROLE_KEY
+  const key =
+    typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY;
   if (key) return key;
+
   throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
 }
 
@@ -80,7 +105,7 @@ function getClient() {
 
 /**
  * Lazy Supabase client — only initialized on first use, not at module load time.
- * Prevents crashes on Vercel preview deployments where env vars aren't set.
+ * Works in both SSR (process.env) and browser (import.meta.env.VITE_*).
  */
 export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
   get(_, prop) {
