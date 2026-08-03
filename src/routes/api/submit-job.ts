@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sql } from "~/db";
+import { notifyNewJobPosting } from "~/lib/email";
 
 export const Route = createFileRoute("/api/submit-job")({
   server: {
@@ -57,6 +58,27 @@ export const Route = createFileRoute("/api/submit-job")({
               budget || null
             }, ${contractor_id || null})
           `;
+
+          const nameParts = contact_name.split(/\s+/);
+          const first_name = nameParts[0] || null;
+          const last_name = nameParts.slice(1).join(" ") || null;
+          void db`
+            INSERT INTO apprenticeship_leads (type, first_name, last_name, email, phone, trade, company_name, message, location, budget, contractor_id)
+            VALUES ('contractor', ${first_name}, ${last_name}, ${email}, ${phone || null}, ${trade}, ${company_name}, ${description}, ${location || null}, ${budget || null}, ${contractor_id || null})
+          `.catch(() => undefined);
+
+          // Send email notification
+          await notifyNewJobPosting({
+            company_name,
+            contact_name,
+            email,
+            phone,
+            trade,
+            description,
+            location,
+            budget,
+          });
+
           return new Response(
             JSON.stringify({ success: true, contact_name, contractor_id: contractor_id || null }),
             { status: 200, headers: { "Content-Type": "application/json" } },
