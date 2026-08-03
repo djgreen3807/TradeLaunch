@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sql } from "~/db";
+import { notifyNewApplication } from "~/lib/email";
 
 export const Route = createFileRoute("/api/submit-application")({
   server: {
@@ -60,6 +61,26 @@ export const Route = createFileRoute("/api/submit-application")({
             INSERT INTO apprentice_applications (full_name, email, phone, trade, experience, certifications, location, personal_statement)
             VALUES (${full_name}, ${email}, ${phone || null}, ${trade}, ${experience || null}, ${certifications || null}, ${location || null}, ${personal_statement || null})
           `;
+
+          const nameParts = full_name.split(/\s+/);
+          const first_name = nameParts[0] || null;
+          const last_name = nameParts.slice(1).join(" ") || null;
+          void db`
+            INSERT INTO apprenticeship_leads (type, first_name, last_name, email, phone, trade, experience, certifications, location, personal_statement, message)
+            VALUES ('apprentice', ${first_name}, ${last_name}, ${email}, ${phone || null}, ${trade}, ${experience || null}, ${certifications || null}, ${location || null}, ${personal_statement || null}, ${personal_statement || null})
+          `.catch(() => undefined);
+
+          // Send email notification
+          await notifyNewApplication({
+            full_name,
+            email,
+            phone,
+            trade,
+            experience,
+            certifications,
+            location,
+            personal_statement,
+          });
 
           return new Response(
             JSON.stringify({ success: true, full_name, trade }),
