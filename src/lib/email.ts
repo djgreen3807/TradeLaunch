@@ -22,12 +22,23 @@ function getTransporter() {
     return null;
   }
 
-  console.log("[SMTP] Creating transport for", host, "port 465 SSL as", user);
+  // Log exact values for debugging (never log the password)
+  console.log("[SMTP] Creating transport — host:", host, "port: 587, user:", user);
+
   return nodemailer.createTransport({
     host,
-    port: 465,
-    secure: true, // SSL
-    auth: { user, pass },
+    port: 587,
+    secure: false, // STARTTLS
+    requireTLS: true,
+    auth: {
+      user,
+      pass,
+      method: "LOGIN", // Namecheap requires explicit LOGIN, not default PLAIN
+    },
+    tls: {
+      // Don't fail on self-signed certs (Namecheap shared hosting quirk)
+      rejectUnauthorized: false,
+    },
   });
 }
 
