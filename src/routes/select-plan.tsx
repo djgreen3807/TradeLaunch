@@ -15,7 +15,6 @@ import {
   hasActivePlan,
   createPayPerPlacementSetupIntent,
   savePayPerPlacementPaymentMethod,
-  createMonthlyUnlimitedCheckout,
 } from "~/lib/payment-server";
 
 export const Route = createFileRoute("/select-plan")({
@@ -276,11 +275,21 @@ function SelectPlanPage() {
     setError("");
     setCheckoutBusy(true);
     try {
-      const { url } = await createMonthlyUnlimitedCheckout({
-        userId: userId!,
-        origin: window.location.origin,
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId!,
+          origin: window.location.origin,
+        }),
       });
-      window.location.href = url;
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        setCheckoutBusy(false);
+        return;
+      }
+      window.location.href = data.url;
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not start checkout. Please try again.";
