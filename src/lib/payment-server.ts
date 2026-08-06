@@ -134,8 +134,8 @@ export const savePayPerPlacementPaymentMethod = createServerFn().handler(
 export const createMonthlyUnlimitedCheckout = createServerFn().handler(
   async ({ userId, origin }: { userId: string; origin: string }): Promise<{ url: string }> => {
     // Ensure origin is a fully-qualified URL with scheme.
-    // In SSR/TanStack RPC, the client-side window.location.origin may not
-    // survive serialization — fall back to the production domain.
+    // In TanStack Start SSR/RPC, the client-side window.location.origin may not
+    // survive serialization intact — fall back to the production domain.
     let baseUrl = origin;
     if (!baseUrl || !/^https?:\/\//.test(baseUrl)) {
       baseUrl = "https://www.tradelaunch.work";
