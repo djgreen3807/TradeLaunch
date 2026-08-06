@@ -26,11 +26,12 @@ export const Route = createFileRoute("/api/stripe-webhook")({
           case "checkout.session.completed": {
             const session = event.data.object;
             const userId = session.client_reference_id;
+            console.log("[WEBHOOK] checkout.session.completed — user:", userId, "subscription:", session.subscription);
             if (userId && session.subscription) {
               const sub = await stripe.subscriptions.retrieve(
                 session.subscription as string,
               );
-              await db`
+              const result = await db`
                 INSERT INTO contractor_subscriptions (user_id, stripe_customer_id, plan_type, subscription_id, subscription_status)
                 VALUES (${userId}, ${session.customer as string}, 'monthly_unlimited', ${session.subscription as string}, 'active')
                 ON CONFLICT (user_id) DO UPDATE SET
@@ -39,7 +40,11 @@ export const Route = createFileRoute("/api/stripe-webhook")({
                   subscription_id = ${session.subscription as string},
                   subscription_status = 'active',
                   updated_at = NOW()
+                RETURNING user_id, plan_type, subscription_status
               `;
+              console.log("[WEBHOOK] DB upsert result:", result[0]);
+            } else {
+              console.log("[WEBHOOK] Skipping — no userId or subscription");
             }
             break;
           }

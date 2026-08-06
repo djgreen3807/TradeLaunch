@@ -179,18 +179,22 @@ export const verifyCheckoutSession = createServerFn().handler(
     sessionId: string;
     userId: string;
   }): Promise<{ ok: boolean; status?: string }> => {
+    console.log("[VERIFY-CHECKOUT] Retrieving session:", sessionId);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.client_reference_id !== userId) {
+      console.error("[VERIFY-CHECKOUT] client_reference_id mismatch:", session.client_reference_id, "!==", userId);
       return { ok: false };
     }
     const paid =
       session.payment_status === "paid" || session.payment_status === "no_payment_required";
+    console.log("[VERIFY-CHECKOUT] payment_status:", session.payment_status, "paid:", paid, "subscription:", session.subscription);
     if (!paid || !session.subscription) {
       return { ok: false, status: session.payment_status ?? undefined };
     }
     const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+    console.log("[VERIFY-CHECKOUT] subscription status:", sub.status);
     const db = sql();
-    await db`
+    const result = await db`
       INSERT INTO contractor_subscriptions (user_id, stripe_customer_id, plan_type, subscription_id, subscription_status)
       VALUES (${userId}, ${session.customer as string}, 'monthly_unlimited', ${session.subscription as string}, ${sub.status})
       ON CONFLICT (user_id) DO UPDATE SET
@@ -199,7 +203,9 @@ export const verifyCheckoutSession = createServerFn().handler(
         subscription_id = ${session.subscription as string},
         subscription_status = ${sub.status},
         updated_at = NOW()
+      RETURNING plan_type, subscription_status
     `;
+    console.log("[VERIFY-CHECKOUT] DB upsert result:", result[0]);
     return { ok: true, status: sub.status };
   },
 );

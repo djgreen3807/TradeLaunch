@@ -115,10 +115,23 @@ function PostJobPage() {
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get("session_id");
       if (sessionId) {
+        console.log("[POST-JOB] Verifying checkout session:", sessionId, "user:", id);
         try {
-          await verifyCheckoutSession({ sessionId, userId: id });
-        } catch {
-          // fall through — re-check the DB row below
+          const result = await verifyCheckoutSession({ sessionId, userId: id });
+          console.log("[POST-JOB] verifyCheckoutSession result:", result);
+          if (!result.ok) {
+            console.error("[POST-JOB] Session verification failed:", result);
+            setError(
+              result.status
+                ? `Payment status is "${result.status}" — please ensure your card was charged. If this persists, contact support.`
+                : "Could not verify your payment. The webhook may still be processing — refresh in a moment.",
+            );
+          }
+        } catch (err) {
+          console.error("[POST-JOB] verifyCheckoutSession threw:", err);
+          setError(
+            "Could not verify your payment. Please refresh in a moment — if this persists, contact support.",
+          );
         }
         if (!cancelled) {
           window.history.replaceState({}, "", "/post-job");
@@ -126,8 +139,11 @@ function PostJobPage() {
       }
 
       const { sub } = await getContractorSubscription({ userId: id });
+      console.log("[POST-JOB] Subscription row:", sub);
       if (!cancelled) {
-        setGate(hasActivePlan(sub) ? "ready" : "noPlan");
+        const planOk = hasActivePlan(sub);
+        console.log("[POST-JOB] hasActivePlan:", planOk);
+        setGate(planOk ? "ready" : "noPlan");
       }
     })();
     return () => {
