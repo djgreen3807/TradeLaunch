@@ -5,6 +5,11 @@ import { sql } from "~/db";
 import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
+import {
+  getContractorSubscription,
+  hasActivePlan,
+  verifyCheckoutSession,
+} from "~/lib/payment-server";
 
 /* ------------------------------------------------------------------ */
 /*  Server functions                                                   */
@@ -86,18 +91,48 @@ function PostJobPage() {
   const [error, setError] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [contractorId, setContractorId] = useState<string | null>(null);
+  const [gate, setGate] = useState<"checking" | "loggedOut" | "noPlan" | "ready">("checking");
   const navigate = useNavigate();
 
-  // Ensure the table exists on first load, and check auth
+  // Ensure the table exists on first load, and check auth + payment gate
   useEffect(() => {
-    ensureTable().catch(() => {
-      // Silently ignore — table creation will be retried on submit
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setContractorId(session.user.id);
+    let cancelled = false;
+    (async () => {
+      ensureTable().catch(() => {
+        // Silently ignore — table creation will be retried on submit
+      });
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        if (!cancelled) setGate("loggedOut");
+        return;
       }
-    });
+      const id = data.session.user.id;
+      setContractorId(id);
+
+      // If we're returning from Stripe Checkout (?session_id=...), verify the
+      // subscription synchronously (the webhook writes the same row, but this
+      // makes the gate open immediately).
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
+      if (sessionId) {
+        try {
+          await verifyCheckoutSession({ sessionId, userId: id });
+        } catch {
+          // fall through — re-check the DB row below
+        }
+        if (!cancelled) {
+          window.history.replaceState({}, "", "/post-job");
+        }
+      }
+
+      const { sub } = await getContractorSubscription({ userId: id });
+      if (!cancelled) {
+        setGate(hasActivePlan(sub) ? "ready" : "noPlan");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function updateField(field: keyof FormData, value: string) {
@@ -138,6 +173,11 @@ function PostJobPage() {
       });
       const result = await res.json();
       if (!res.ok || result.error) {
+        if (res.status === 402 || result.error === "PAYMENT_REQUIRED") {
+          // Payment gate: send the contractor to pick a plan
+          navigate({ to: "/select-plan" });
+          return;
+        }
         setError(result.error || "Something went wrong. Please try again.");
       } else {
         navigate({ to: "/thank-you" });
@@ -148,6 +188,69 @@ function PostJobPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (gate === "checking") {
+    return (
+      <>
+        <Header />
+        <main className="mx-auto max-w-2xl px-4 py-24 text-center">
+          <p className="text-gray-500">Checking your account...</p>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (gate === "loggedOut") {
+    return (
+      <>
+        <Header />
+        <main className="mx-auto max-w-md px-4 py-24 sm:px-6">
+          <div className="rounded-2xl border border-gray-200/70 bg-white p-8 text-center shadow-sm">
+            <h1 className="text-2xl font-bold tracking-tight text-charcoal">
+              Log in to post a job
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-gray-600">
+              You need a contractor account to post an apprenticeship.
+            </p>
+            <a
+              href="/login"
+              className="mt-6 inline-flex w-full justify-center rounded-xl bg-brand px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-brand-hover hover:shadow-lg"
+            >
+              Log in
+            </a>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (gate === "noPlan") {
+    return (
+      <>
+        <Header />
+        <main className="mx-auto max-w-md px-4 py-24 sm:px-6">
+          <div className="rounded-2xl border border-gray-200/70 bg-white p-8 text-center shadow-sm">
+            <h1 className="text-2xl font-bold tracking-tight text-charcoal">
+              Select a plan to continue
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-gray-600">
+              You need an active plan — Pay-Per-Placement ($299 on hire) or Monthly
+              Unlimited ($149/mo) — before you can post an apprenticeship.
+            </p>
+            <a
+              href="/select-plan"
+              className="mt-6 inline-flex w-full justify-center rounded-xl bg-brand px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-brand-hover hover:shadow-lg"
+            >
+              Choose a plan
+            </a>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
   }
 
   return (

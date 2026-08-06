@@ -41,9 +41,44 @@ export const Route = createFileRoute("/api/submit-job")({
           );
         }
 
-        try {
-          const db = sql();
+        // ------------------------------------------------------------------
+        // Payment gate: contractors must have an active plan (Monthly
+        // Unlimited subscription) or a saved card (Pay-Per-Placement) before
+        // they can submit a job posting.
+        // ------------------------------------------------------------------
+        const db = sql();
+        if (!contractor_id) {
+          return new Response(
+            JSON.stringify({
+              error: "PAYMENT_REQUIRED",
+              message: "Please select a plan before posting a job.",
+            }),
+            { status: 402, headers: { "Content-Type": "application/json" } },
+          );
+        }
 
+        const sub = await db`
+          SELECT plan_type, subscription_status, payment_method_id
+          FROM contractor_subscriptions
+          WHERE user_id = ${contractor_id}
+        `;
+
+        const hasActivePlan =
+          sub.length > 0 &&
+          ((sub[0].plan_type === "monthly_unlimited" && sub[0].subscription_status === "active") ||
+            (sub[0].plan_type === "pay_per_placement" && sub[0].payment_method_id !== null));
+
+        if (!hasActivePlan) {
+          return new Response(
+            JSON.stringify({
+              error: "PAYMENT_REQUIRED",
+              message: "No active plan. Please select a plan first.",
+            }),
+            { status: 402, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        try {
           // Ensure contractor_id column exists
           await db`
             ALTER TABLE job_postings
