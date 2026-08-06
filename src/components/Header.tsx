@@ -52,7 +52,7 @@ export function Header() {
     setAudience(newAudience);
   }
 
-  const getStartedHref = audience === "apprentices" ? "/apply" : "/post-job";
+  const getStartedHref = audience === "apprentices" ? "/apply" : "/login";
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-white/80 backdrop-blur-md">
