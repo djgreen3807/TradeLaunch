@@ -133,11 +133,28 @@ export const savePayPerPlacementPaymentMethod = createServerFn().handler(
  */
 export const createMonthlyUnlimitedCheckout = createServerFn().handler(
   async ({ userId, origin }: { userId: string; origin: string }): Promise<{ url: string }> => {
+    // Ensure origin is a fully-qualified URL with scheme.
+    // In SSR/TanStack RPC, the client-side window.location.origin may not
+    // survive serialization — fall back to the production domain.
+    let baseUrl = origin;
+    if (!baseUrl || !/^https?:\/\//.test(baseUrl)) {
+      baseUrl = "https://www.tradelaunch.work";
+    }
+
+    const successUrl = `${baseUrl}/post-job?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseUrl}/select-plan`;
+
+    console.log("[STRIPE-CHECKOUT] Creating session with URLs:", {
+      successUrl,
+      cancelUrl,
+      userId,
+    });
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: "price_1U1AdpL0z9KENGAOCUTqiwZQ", quantity: 1 }],
-      success_url: `${origin}/post-job?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/select-plan`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       client_reference_id: userId,
       metadata: { user_id: userId },
     });
