@@ -52,13 +52,12 @@ const TIERS: PricingTier[] = [
       "Full dashboard access",
     ],
     cta: "Get Started",
-    ctaHref: "https://buy.stripe.com/dRm9AV9mLeycbDie6L5AQ02",
+    ctaHref: "/select-plan",
   },
   {
     name: "Monthly Unlimited",
     price: "$149",
     priceLabel: "/month",
-    priceSubtext: "or $119/mo billed annually",
     description: "Best for contractors hiring regularly",
     features: [
       "Unlimited job postings",
@@ -68,7 +67,7 @@ const TIERS: PricingTier[] = [
       "Everything in Pay-Per-Placement",
     ],
     cta: "Get Started",
-    ctaHref: "https://buy.stripe.com/6oUdRb8iHdu8ePu2o35AQ03",
+    ctaHref: "/select-plan",
     highlighted: true,
   },
   {
