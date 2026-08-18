@@ -1,8 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { supabase } from "~/lib/supabase";
-import { sql } from "~/db";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
 
@@ -41,112 +39,6 @@ type DashboardData = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Server function — runs only on the server                          */
-/* ------------------------------------------------------------------ */
-
-const fetchDashboardData = createServerFn().handler(
-  async ({
-    contractorId,
-    contractorEmail,
-  }: {
-    contractorId: string;
-    contractorEmail: string;
-  }): Promise<DashboardData> => {
-    const db = sql();
-
-    // Ensure contractor_id column exists
-    await db`
-      ALTER TABLE job_postings
-      ADD COLUMN IF NOT EXISTS contractor_id UUID
-    `;
-
-    // Fetch jobs: match by contractor_id (new) OR by email (legacy, no contractor_id)
-    const jobs = await db`
-      SELECT id, company_name, trade, description, location, budget, created_at
-      FROM job_postings
-      WHERE contractor_id = ${contractorId}
-         OR (contractor_id IS NULL AND email = ${contractorEmail})
-      ORDER BY created_at DESC
-    `;
-
-    const jobIds: string[] = jobs.map((j: { id: string }) => j.id);
-
-    let allMatches: (MatchWithApplicant & { job_posting_id: string })[] = [];
-    if (jobIds.length > 0) {
-      await db`
-        CREATE TABLE IF NOT EXISTS matches (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          job_posting_id UUID REFERENCES job_postings(id),
-          application_id UUID REFERENCES apprentice_applications(id),
-          status TEXT DEFAULT 'suggested',
-          notes TEXT,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-      `;
-
-      const matchRows = await db`
-        SELECT
-          m.id AS match_id,
-          m.job_posting_id,
-          m.status AS match_status,
-          m.created_at AS match_created_at,
-          aa.id AS applicant_id,
-          aa.full_name,
-          aa.email,
-          aa.phone,
-          aa.trade,
-          aa.experience,
-          aa.certifications,
-          aa.location,
-          aa.personal_statement,
-          aa.status AS app_status
-        FROM matches m
-        JOIN apprentice_applications aa ON m.application_id = aa.id
-        WHERE m.job_posting_id = ANY(${jobIds})
-        ORDER BY m.created_at DESC
-      `;
-
-      allMatches = matchRows.map(
-        (r: Record<string, unknown>) =>
-          ({
-            match_id: String(r.match_id),
-            job_posting_id: String(r.job_posting_id),
-            match_status: String(r.match_status),
-            match_created_at: String(r.match_created_at),
-            applicant_id: String(r.applicant_id),
-            full_name: String(r.full_name),
-            email: String(r.email),
-            phone: r.phone ? String(r.phone) : null,
-            trade: String(r.trade),
-            experience: r.experience ? String(r.experience) : null,
-            certifications: r.certifications ? String(r.certifications) : null,
-            location: r.location ? String(r.location) : null,
-            personal_statement: r.personal_statement
-              ? String(r.personal_statement)
-              : null,
-            app_status: String(r.app_status ?? "new"),
-          }) as MatchWithApplicant & { job_posting_id: string },
-      );
-    }
-
-    const jobsWithMatches = jobs.map((j: Record<string, unknown>) => ({
-      id: String(j.id),
-      company_name: String(j.company_name),
-      trade: String(j.trade),
-      description: String(j.description),
-      location: j.location ? String(j.location) : null,
-      budget: j.budget ? String(j.budget) : null,
-      created_at: String(j.created_at),
-      matches: allMatches
-        .filter((m) => m.job_posting_id === String(j.id))
-        .map(({ job_posting_id: _jpId, ...rest }) => rest),
-    }));
-
-    return { jobs: jobsWithMatches };
-  },
-);
-
-/* ------------------------------------------------------------------ */
 /*  Page component                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -169,10 +61,18 @@ function DashboardPage() {
       }
       setSession(s);
       setLoadingData(true);
-      fetchDashboardData({
-        contractorId: s.user.id,
-        contractorEmail: s.user.email || "",
+      fetch("/api/dashboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractorId: s.user.id,
+          contractorEmail: s.user.email || "",
+        }),
       })
+        .then(async (res) => {
+          if (!res.ok) throw new Error(`Dashboard request failed: ${res.status}`);
+          return res.json() as Promise<DashboardData>;
+        })
         .then(setDashboard)
         .catch(console.error)
         .finally(() => {
