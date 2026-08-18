@@ -11,7 +11,6 @@ import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
 import {
-  getContractorSubscription,
   hasActivePlan,
   createPayPerPlacementSetupIntent,
   savePayPerPlacementPaymentMethod,
@@ -243,7 +242,18 @@ function SelectPlanPage() {
       if (cancelled) return;
 
       // Already has an active plan → straight to the form
-      const { sub } = await getContractorSubscription({ userId: id });
+      let sub = null;
+      try {
+        const subRes = await fetch("/api/get-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: id }),
+        });
+        const subData = await subRes.json();
+        sub = subData.sub ?? null;
+      } catch (err) {
+        console.error("[SELECT-PLAN] get-subscription fetch failed:", err);
+      }
       if (!cancelled) {
         if (hasActivePlan(sub)) {
           navigate({ to: "/post-job" });

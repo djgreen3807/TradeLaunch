@@ -5,11 +5,7 @@ import { sql } from "~/db";
 import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
-import {
-  getContractorSubscription,
-  hasActivePlan,
-  verifyCheckoutSession,
-} from "~/lib/payment-server";
+import { hasActivePlan } from "~/lib/payment-server";
 
 /* ------------------------------------------------------------------ */
 /*  Server functions                                                   */
@@ -112,37 +108,59 @@ function PostJobPage() {
       // If we're returning from Stripe Checkout (?session_id=...), verify the
       // subscription synchronously (the webhook writes the same row, but this
       // makes the gate open immediately).
-      const params = new URLSearchParams(window.location.search);
+      const search = window.location.search;
+      const href = window.location.href;
+      console.log("[POST-JOB] Full URL:", href, "search:", search);
+      const params = new URLSearchParams(search);
       const sessionId = params.get("session_id");
+      console.log("[POST-JOB] sessionId from URL:", sessionId, "truthy:", Boolean(sessionId));
       if (sessionId) {
-        console.log("[POST-JOB] Verifying checkout session:", sessionId, "user:", id);
+        console.log("[POST-JOB] Verifying checkout session via fetch:", sessionId, "user:", id);
         try {
-          const result = await verifyCheckoutSession({ sessionId, userId: id });
-          console.log("[POST-JOB] verifyCheckoutSession result:", result);
+          const res = await fetch("/api/verify-checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, userId: id }),
+          });
+          const result = await res.json();
+          console.log("[POST-JOB] verify-checkout result:", result);
           if (!result.ok) {
-            console.error("[POST-JOB] Session verification failed:", result);
             setError(
-              result.status
-                ? `Payment status is "${result.status}" — please ensure your card was charged. If this persists, contact support.`
-                : "Could not verify your payment. The webhook may still be processing — refresh in a moment.",
+              result.error
+                ? `Verification failed: ${result.error}`
+                : `Payment status is "${result.status}" — please ensure your card was charged.`,
             );
           }
         } catch (err) {
-          console.error("[POST-JOB] verifyCheckoutSession threw:", err);
-          setError(
-            "Could not verify your payment. Please refresh in a moment — if this persists, contact support.",
-          );
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[POST-JOB] fetch failed:", msg);
+          setError(`Verification failed: ${msg}`);
         }
         if (!cancelled) {
           window.history.replaceState({}, "", "/post-job");
         }
       }
 
-      const { sub } = await getContractorSubscription({ userId: id });
+      let sub = null;
+      try {
+        const subRes = await fetch("/api/get-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: id }),
+        });
+        const subData = await subRes.json();
+        sub = subData.sub ?? null;
+        console.log("[POST-JOB] get-subscription result:", subData);
+      } catch (err) {
+        console.error("[POST-JOB] get-subscription fetch failed:", err);
+      }
+
       console.log("[POST-JOB] Subscription row:", sub);
+      console.log("[POST-JOB] BUILD=v4 — " + new Date().toISOString());
       if (!cancelled) {
         const planOk = hasActivePlan(sub);
         console.log("[POST-JOB] hasActivePlan:", planOk);
+        window.__BUILD_TAG = "v4-" + Date.now();
         setGate(planOk ? "ready" : "noPlan");
       }
     })();
@@ -256,6 +274,12 @@ function PostJobPage() {
               You need an active plan — Pay-Per-Placement ($299 on hire) or Monthly
               Unlimited ($149/mo) — before you can post an apprenticeship.
             </p>
+            {/* v3 — diagnostics build */}
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
             <a
               href="/select-plan"
               className="mt-6 inline-flex w-full justify-center rounded-xl bg-brand px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-brand-hover hover:shadow-lg"

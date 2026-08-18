@@ -172,40 +172,44 @@ export const createMonthlyUnlimitedCheckout = createServerFn().handler(
  * that payment succeeded before unlocking /post-job.
  */
 export const verifyCheckoutSession = createServerFn().handler(
-  async ({
-    sessionId,
-    userId,
-  }: {
-    sessionId: string;
-    userId: string;
-  }): Promise<{ ok: boolean; status?: string }> => {
-    console.log("[VERIFY-CHECKOUT] Retrieving session:", sessionId);
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.client_reference_id !== userId) {
-      console.error("[VERIFY-CHECKOUT] client_reference_id mismatch:", session.client_reference_id, "!==", userId);
-      return { ok: false };
+  async (raw: { sessionId: string; userId: string }): Promise<{ ok: boolean; status?: string }> => {
+    // Log the raw input to catch TanStack RPC serialization issues
+    console.log("[VERIFY-CHECKOUT] Raw input:", JSON.stringify(raw));
+    const { sessionId, userId } = raw;
+    console.log("[VERIFY-CHECKOUT] Destructured — sessionId:", sessionId, "userId:", userId);
+    try {
+      console.log("[VERIFY-CHECKOUT] Retrieving session:", sessionId);
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.client_reference_id !== userId) {
+        console.error("[VERIFY-CHECKOUT] client_reference_id mismatch:", session.client_reference_id, "!==", userId);
+        return { ok: false };
+      }
+      const paid =
+        session.payment_status === "paid" || session.payment_status === "no_payment_required";
+      console.log("[VERIFY-CHECKOUT] payment_status:", session.payment_status, "paid:", paid, "subscription:", session.subscription);
+      if (!paid || !session.subscription) {
+        return { ok: false, status: session.payment_status ?? undefined };
+      }
+      const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+      console.log("[VERIFY-CHECKOUT] subscription status:", sub.status);
+      const db = sql();
+      const result = await db`
+        INSERT INTO contractor_subscriptions (user_id, stripe_customer_id, plan_type, subscription_id, subscription_status)
+        VALUES (${userId}, ${session.customer as string}, 'monthly_unlimited', ${session.subscription as string}, ${sub.status})
+        ON CONFLICT (user_id) DO UPDATE SET
+          stripe_customer_id = ${session.customer as string},
+          plan_type = 'monthly_unlimited',
+          subscription_id = ${session.subscription as string},
+          subscription_status = ${sub.status},
+          updated_at = NOW()
+        RETURNING plan_type, subscription_status
+      `;
+      console.log("[VERIFY-CHECKOUT] DB upsert result:", result[0]);
+      return { ok: true, status: sub.status };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[VERIFY-CHECKOUT] ERROR:", msg, "sessionId was:", sessionId);
+      throw err;
     }
-    const paid =
-      session.payment_status === "paid" || session.payment_status === "no_payment_required";
-    console.log("[VERIFY-CHECKOUT] payment_status:", session.payment_status, "paid:", paid, "subscription:", session.subscription);
-    if (!paid || !session.subscription) {
-      return { ok: false, status: session.payment_status ?? undefined };
-    }
-    const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-    console.log("[VERIFY-CHECKOUT] subscription status:", sub.status);
-    const db = sql();
-    const result = await db`
-      INSERT INTO contractor_subscriptions (user_id, stripe_customer_id, plan_type, subscription_id, subscription_status)
-      VALUES (${userId}, ${session.customer as string}, 'monthly_unlimited', ${session.subscription as string}, ${sub.status})
-      ON CONFLICT (user_id) DO UPDATE SET
-        stripe_customer_id = ${session.customer as string},
-        plan_type = 'monthly_unlimited',
-        subscription_id = ${session.subscription as string},
-        subscription_status = ${sub.status},
-        updated_at = NOW()
-      RETURNING plan_type, subscription_status
-    `;
-    console.log("[VERIFY-CHECKOUT] DB upsert result:", result[0]);
-    return { ok: true, status: sub.status };
   },
 );
