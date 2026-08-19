@@ -10,11 +10,7 @@ import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
-import {
-  hasActivePlan,
-  createPayPerPlacementSetupIntent,
-  savePayPerPlacementPaymentMethod,
-} from "~/lib/payment-server";
+import { hasActivePlan } from "~/lib/payment-server";
 
 export const Route = createFileRoute("/select-plan")({
   component: SelectPlanPage,
@@ -61,7 +57,20 @@ function CardForm({
     setSaving(true);
     try {
       // 1. Server-side: create a SetupIntent, return client_secret
-      const { clientSecret, customerId } = await createPayPerPlacementSetupIntent({ userId });
+      const intentRes = await fetch("/api/create-setup-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const intentData = (await intentRes.json()) as {
+        clientSecret?: string;
+        customerId?: string;
+        error?: string;
+      };
+      if (!intentRes.ok || !intentData.clientSecret || !intentData.customerId) {
+        throw new Error(intentData.error || "Could not start card setup. Please try again.");
+      }
+      const { clientSecret, customerId } = intentData;
 
       // 2. Frontend: confirm the card setup with Stripe Elements
       const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(
@@ -82,7 +91,15 @@ function CardForm({
 
       // 3. Persist the payment method + plan
       const paymentMethodId = setupIntent.payment_method as string;
-      await savePayPerPlacementPaymentMethod({ userId, customerId, paymentMethodId });
+      const saveRes = await fetch("/api/save-payment-method", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, customerId, paymentMethodId }),
+      });
+      const saveData = (await saveRes.json()) as { ok?: boolean; error?: string };
+      if (!saveRes.ok || !saveData.ok) {
+        throw new Error(saveData.error || "Could not save your card. Please try again.");
+      }
       onDone();
     } catch (err) {
       const message =

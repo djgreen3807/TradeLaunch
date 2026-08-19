@@ -97,25 +97,6 @@ const getApplications = createServerFn().handler(async (): Promise<ApprenticeApp
   })) as ApprenticeApplication[];
 });
 
-const updateApplicationStatus = createServerFn().handler(
-  async ({ id, status }: { id: string; status: string }): Promise<{ success: boolean; error?: string }> => {
-    const db = sql();
-    try {
-      await db`
-        ALTER TABLE apprentice_applications
-        ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'new'
-      `;
-      await db`
-        UPDATE apprentice_applications SET status = ${status} WHERE id = ${id}
-      `;
-      return { success: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      return { success: false, error: message };
-    }
-  },
-);
-
 const getMatches = createServerFn().handler(async (): Promise<Match[]> => {
   const db = sql();
   // Ensure matches table exists
@@ -152,49 +133,6 @@ const getMatches = createServerFn().handler(async (): Promise<Match[]> => {
     notes: r.notes ?? null,
   })) as Match[];
 });
-
-const createMatch = createServerFn().handler(
-  async ({
-    job_posting_id,
-    application_id,
-  }: {
-    job_posting_id: string;
-    application_id: string;
-  }): Promise<{ success: boolean; error?: string }> => {
-    const db = sql();
-    try {
-      await db`
-        CREATE TABLE IF NOT EXISTS matches (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          job_posting_id UUID REFERENCES job_postings(id),
-          application_id UUID REFERENCES apprentice_applications(id),
-          status TEXT DEFAULT 'suggested',
-          notes TEXT,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-      `;
-
-      // Check for duplicate
-      const existing = await db`
-        SELECT id FROM matches
-        WHERE job_posting_id = ${job_posting_id}
-          AND application_id = ${application_id}
-      `;
-      if (existing.length > 0) {
-        return { success: false, error: "Match already exists" };
-      }
-
-      await db`
-        INSERT INTO matches (job_posting_id, application_id)
-        VALUES (${job_posting_id}, ${application_id})
-      `;
-      return { success: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      return { success: false, error: message };
-    }
-  },
-);
 
 /* ------------------------------------------------------------------ */
 /*  Auth gate — Supabase sign-in                                       */
@@ -746,20 +684,30 @@ function MatchModal({
     setCreating(true);
     setError("");
     try {
-      const result = await createMatch({
-        job_posting_id: selectedJob,
-        application_id: selectedApp,
+      const res = await fetch("/api/create-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_posting_id: selectedJob,
+          application_id: selectedApp,
+        }),
       });
-      if (result.success) {
-        // Also update the application status to "matched"
-        await updateApplicationStatus({ id: selectedApp, status: "matched" });
+      const data = (await res.json()) as { success?: boolean; error?: string };
+      if (res.ok && data.success) {
+        // Also update the application status to "matched" (the endpoint does
+        // this itself; this is a harmless backstop to keep behavior identical)
+        await fetch("/api/update-application-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: selectedApp, status: "matched" }),
+        }).catch(() => {});
         setSuccess("Match created!");
         setTimeout(() => {
           onMatched();
           onClose();
         }, 800);
       } else {
-        setError(result.error ?? "Failed to create match");
+        setError(data.error ?? "Failed to create match");
       }
     } catch {
       setError("Network error");
@@ -879,9 +827,19 @@ function Dashboard() {
     setApplications((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)),
     );
-    const result = await updateApplicationStatus({ id, status: newStatus });
-    if (!result.success) {
-      // Revert on failure
+    try {
+      const res = await fetch("/api/update-application-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      const data = (await res.json()) as { success?: boolean };
+      if (!res.ok || !data.success) {
+        // Revert on failure
+        setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status: a.status } : a)));
+      }
+    } catch {
+      // Revert on network error
       setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status: a.status } : a)));
     }
   };
