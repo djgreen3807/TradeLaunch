@@ -107,6 +107,8 @@ function getClient() {
  * Lazy Supabase client — only initialized on first use, not at module load time.
  * Works in both SSR (process.env) and browser (import.meta.env.VITE_*).
  */
+export { getSupabaseUrl, getSupabaseAnonKey };
+
 export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
   get(_, prop) {
     return (getClient() as any)[prop];
