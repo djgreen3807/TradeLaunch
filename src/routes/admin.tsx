@@ -1,138 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useCallback } from "react";
-import { sql } from "~/db";
 import { supabase } from "~/lib/supabase";
+import { ADMIN_EMAILS } from "~/lib/admin-auth";
+import type { JobPosting, ApprenticeApplication, Match, School } from "~/lib/types";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
 
 /* ------------------------------------------------------------------ */
-/*  Server functions                                                   */
+/*  Gated API helpers                                                  */
 /* ------------------------------------------------------------------ */
 
-type JobPosting = {
-  id: string;
-  company_name: string;
-  contact_name: string;
-  email: string;
-  phone: string | null;
-  trade: string;
-  description: string;
-  location: string | null;
-  budget: string | null;
-  created_at: string;
-};
+class NotAuthorizedError extends Error {
+  constructor() {
+    super("Not authorized");
+    this.name = "NotAuthorizedError";
+  }
+}
 
-type ApprenticeApplication = {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  trade: string;
-  experience: string | null;
-  certifications: string | null;
-  location: string | null;
-  personal_statement: string | null;
-  status: string;
-  created_at: string;
-};
-
-type Match = {
-  id: string;
-  job_posting_id: string;
-  application_id: string;
-  status: string;
-  notes: string | null;
-  created_at: string;
-  company_name: string;
-  job_trade: string;
-  full_name: string;
-  app_trade: string;
-};
-
-const getJobPostings = createServerFn().handler(async (): Promise<JobPosting[]> => {
-  const db = sql();
-  const rows = await db`
-    SELECT id, company_name, contact_name, email, phone, trade, description, location, budget, created_at
-    FROM job_postings
-    ORDER BY created_at DESC
-  `;
-  return rows.map((r) => ({
-    ...r,
-    created_at: String(r.created_at),
-  })) as JobPosting[];
-});
-
-const getApplications = createServerFn().handler(async (): Promise<ApprenticeApplication[]> => {
-  const db = sql();
-  // Ensure the table exists
-  await db`
-    CREATE TABLE IF NOT EXISTS apprentice_applications (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      full_name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT,
-      trade TEXT NOT NULL,
-      experience TEXT,
-      certifications TEXT,
-      location TEXT,
-      personal_statement TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-  // Ensure the status column exists
-  await db`
-    ALTER TABLE apprentice_applications
-    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'new'
-  `;
-  const rows = await db`
-    SELECT id, full_name, email, phone, trade, experience, certifications, location, personal_statement, status, created_at
-    FROM apprentice_applications
-    ORDER BY created_at DESC
-  `;
-  return rows.map((r) => ({
-    ...r,
-    status: r.status ?? "new",
-    created_at: String(r.created_at),
-  })) as ApprenticeApplication[];
-});
-
-const getMatches = createServerFn().handler(async (): Promise<Match[]> => {
-  const db = sql();
-  // Ensure matches table exists
-  await db`
-    CREATE TABLE IF NOT EXISTS matches (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      job_posting_id UUID REFERENCES job_postings(id),
-      application_id UUID REFERENCES apprentice_applications(id),
-      status TEXT DEFAULT 'suggested',
-      notes TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-  const rows = await db`
-    SELECT
-      m.id,
-      m.job_posting_id,
-      m.application_id,
-      m.status,
-      m.notes,
-      m.created_at,
-      jp.company_name,
-      jp.trade AS job_trade,
-      aa.full_name,
-      aa.trade AS app_trade
-    FROM matches m
-    JOIN job_postings jp ON m.job_posting_id = jp.id
-    JOIN apprentice_applications aa ON m.application_id = aa.id
-    ORDER BY m.created_at DESC
-  `;
-  return rows.map((r) => ({
-    ...r,
-    created_at: String(r.created_at),
-    notes: r.notes ?? null,
-  })) as Match[];
-});
+/** POST to a gated /api endpoint with the admin Bearer token.
+ *  Throws NotAuthorizedError on 401/403; returns the parsed JSON on success. */
+async function gatedFetch<T>(
+  path: string,
+  accessToken: string,
+  body?: unknown,
+): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401 || res.status === 403) {
+    throw new NotAuthorizedError();
+  }
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error ?? `Request failed (${res.status})`);
+  }
+  return res.json() as Promise<T>;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Auth gate — Supabase sign-in                                       */
@@ -284,72 +192,6 @@ function downloadCsv(filename: string, headers: string[], rows: string[][]): voi
 }
 
 /* ------------------------------------------------------------------ */
-/*  Password gate component                                            */
-/* ------------------------------------------------------------------ */
-
-function PasswordGate({ onSuccess }: { onSuccess: () => void }) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated();
-      onSuccess();
-    } else {
-      setError("Incorrect password. Please try again.");
-      setPassword("");
-    }
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-warm-cream px-4">
-      <div className="w-full max-w-sm">
-        <div className="rounded-2xl border border-gray-200/70 bg-white p-8 shadow-sm">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-charcoal">
-              Trade<span className="text-brand">Launch</span>
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">Admin Dashboard</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError("");
-                }}
-                placeholder="Enter admin password"
-                autoFocus
-                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-charcoal placeholder-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none transition-colors"
-              />
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover cursor-pointer"
-            >
-              Sign In
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  Status badge                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -361,6 +203,21 @@ function StatusBadge({ status }: { status: string }) {
     matched: { label: "Matched", classes: "bg-purple-100 text-purple-700" },
   };
   const c = config[status] ?? config.new;
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${c.classes}`}>
+      {c.label}
+    </span>
+  );
+}
+
+function SchoolStatusBadge({ status }: { status: string }) {
+  const config: Record<string, { label: string; classes: string }> = {
+    pending: { label: "Pending", classes: "bg-orange-100 text-orange-700" },
+    approved: { label: "Approved", classes: "bg-green-100 text-green-700" },
+    rejected: { label: "Rejected", classes: "bg-red-100 text-red-700" },
+    suspended: { label: "Suspended", classes: "bg-gray-200 text-gray-600" },
+  };
+  const c = config[status] ?? config.pending;
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${c.classes}`}>
       {c.label}
@@ -652,6 +509,227 @@ function MatchesTable({ data }: { data: Match[] }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Schools table                                                      */
+/* ------------------------------------------------------------------ */
+
+function formatTrades(trades: string | null): string {
+  if (!trades) return "—";
+  try {
+    const parsed = JSON.parse(trades);
+    if (Array.isArray(parsed)) return parsed.join(", ");
+  } catch {
+    // not JSON — fall through to raw string
+  }
+  return trades;
+}
+
+function copyText(text: string): void {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    return;
+  }
+  // Fallback for non-secure contexts
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+  } catch {
+    // ignore
+  }
+  document.body.removeChild(ta);
+}
+
+function SchoolsTable({
+  data,
+  accessToken,
+  onNotAuthorized,
+  onRefresh,
+}: {
+  data: School[];
+  accessToken: string;
+  onNotAuthorized: () => void;
+  onRefresh: () => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [actionOk, setActionOk] = useState("");
+
+  const runAction = async (school: School, action: "approve" | "reject" | "suspend") => {
+    setBusyId(school.id);
+    setActionError("");
+    setActionOk("");
+    try {
+      await gatedFetch<{ ok?: boolean }>(
+        `/api/admin-school-${action}`,
+        accessToken,
+        { id: school.id },
+      );
+      setActionOk(
+        action === "approve"
+          ? `Approved "${school.name}" — referral link generated below.`
+          : action === "reject"
+            ? `Rejected "${school.name}".`
+            : `Suspended "${school.name}".`,
+      );
+      onRefresh();
+    } catch (err) {
+      if (err instanceof NotAuthorizedError) {
+        onNotAuthorized();
+        return;
+      }
+      setActionError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (data.length === 0) {
+    return (
+      <div>
+        {actionError && (
+          <p className="mb-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{actionError}</p>
+        )}
+        <div className="rounded-2xl border border-gray-200/70 bg-white p-12 text-center shadow-sm">
+          <p className="text-gray-400 text-sm">No school applications yet.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {actionOk && (
+        <p className="mb-3 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">{actionOk}</p>
+      )}
+      {actionError && (
+        <p className="mb-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{actionError}</p>
+      )}
+      <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/70">
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">School</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Contact</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Trades</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Students</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Join Link</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Date</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {data.map((school) => (
+                <tr key={school.id} className="hover:bg-warm-cream/50 transition-colors align-top">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-charcoal">{school.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {[school.city, school.state].filter(Boolean).join(", ") || "—"}
+                    </p>
+                    {school.slug && (
+                      <p className="text-xs text-gray-400 mt-0.5">slug: <span className="font-mono">{school.slug}</span></p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-gray-600 whitespace-nowrap">{school.contact_name}</p>
+                    <a href={`mailto:${school.contact_email}`} className="text-brand hover:underline text-xs">
+                      {school.contact_email}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    <span className="text-xs">{formatTrades(school.trades)}</span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                    {school.student_count_estimate ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <SchoolStatusBadge status={school.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {school.slug && school.referral_code ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={`/join/${school.slug}`}
+                            className="text-xs font-mono text-brand hover:underline whitespace-nowrap"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            /join/{school.slug}
+                          </a>
+                          <button
+                            onClick={() => copyText(`/join/${school.slug}`)}
+                            className="text-xs text-gray-400 hover:text-brand cursor-pointer"
+                            title="Copy join URL"
+                          >
+                            ⧉
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs text-gray-500">ref: {school.referral_code}</code>
+                          <button
+                            onClick={() => copyText(school.referral_code!)}
+                            className="text-xs text-gray-400 hover:text-brand cursor-pointer"
+                            title="Copy referral code"
+                          >
+                            ⧉
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    {school.created_at ? formatDate(school.created_at) : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      {(school.status === "pending" || school.status === "rejected") && (
+                        <button
+                          onClick={() => runAction(school, "approve")}
+                          disabled={busyId === school.id}
+                          className="rounded-lg bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {school.status === "pending" && (
+                        <button
+                          onClick={() => runAction(school, "reject")}
+                          disabled={busyId === school.id}
+                          className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-200 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                      )}
+                      {school.status === "approved" && (
+                        <button
+                          onClick={() => runAction(school, "suspend")}
+                          disabled={busyId === school.id}
+                          className="rounded-lg bg-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          Suspend
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Match modal                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -782,11 +860,18 @@ function MatchModal({
 /*  Dashboard                                                          */
 /* ------------------------------------------------------------------ */
 
-function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"jobs" | "apps" | "matches">("jobs");
+function Dashboard({
+  accessToken,
+  onNotAuthorized,
+}: {
+  accessToken: string;
+  onNotAuthorized: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<"jobs" | "apps" | "matches" | "schools">("jobs");
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [applications, setApplications] = useState<ApprenticeApplication[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
@@ -801,22 +886,28 @@ function Dashboard() {
     setLoading(true);
     setError("");
     try {
-      const [jobs, apps, matchList] = await Promise.all([
-        getJobPostings(),
-        getApplications(),
-        getMatches(),
+      const [jobs, apps, matchList, schoolList] = await Promise.all([
+        gatedFetch<JobPosting[]>("/api/admin-jobs", accessToken),
+        gatedFetch<ApprenticeApplication[]>("/api/admin-applications", accessToken),
+        gatedFetch<Match[]>("/api/admin-matches", accessToken),
+        gatedFetch<School[]>("/api/admin-schools", accessToken),
       ]);
       setJobPostings(jobs);
       setApplications(apps);
       setMatches(matchList);
+      setSchools(schoolList);
       setLastRefreshed(new Date());
     } catch (err) {
+      if (err instanceof NotAuthorizedError) {
+        onNotAuthorized();
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Failed to load data";
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken, onNotAuthorized]);
 
   useEffect(() => {
     loadData();
@@ -850,7 +941,10 @@ function Dashboard() {
 
   const handleMatchCreated = () => {
     // Reload matches and applications to reflect new statuses
-    Promise.all([getMatches(), getApplications()])
+    Promise.all([
+      gatedFetch<Match[]>("/api/admin-matches", accessToken),
+      gatedFetch<ApprenticeApplication[]>("/api/admin-applications", accessToken),
+    ])
       .then(([matchList, appList]) => {
         setMatches(matchList);
         setApplications(appList);
@@ -978,6 +1072,16 @@ function Dashboard() {
                   >
                     Matches ({matches.length})
                   </button>
+                  <button
+                    onClick={() => setActiveTab("schools")}
+                    className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
+                      activeTab === "schools"
+                        ? "border-brand text-brand"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Schools ({schools.length})
+                  </button>
                 </div>
 
                 {/* Tab content */}
@@ -992,8 +1096,15 @@ function Dashboard() {
                     onStatusChange={handleStatusChange}
                     onMatch={(appId) => handleOpenMatchModal(null, appId)}
                   />
-                ) : (
+                ) : activeTab === "matches" ? (
                   <MatchesTable data={matches} />
+                ) : (
+                  <SchoolsTable
+                    data={schools}
+                    accessToken={accessToken}
+                    onNotAuthorized={onNotAuthorized}
+                    onRefresh={loadData}
+                  />
                 )}
               </>
             )}
@@ -1025,25 +1136,50 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+type AdminAuthState =
+  | { status: "checking" }
+  | { status: "signedOut" }
+  | { status: "denied"; email: string }
+  | { status: "authorized"; accessToken: string; email: string };
+
 function AdminPage() {
-  const [authed, setAuthed] = useState(false);
-  const [checking, setChecking] = useState(true);
+  const [auth, setAuth] = useState<AdminAuthState>({ status: "checking" });
+
+  const applySession = useCallback(async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
+    if (!session) {
+      setAuth({ status: "signedOut" });
+      return;
+    }
+    const email = (session.user.email ?? "").toLowerCase().trim();
+    const isAdmin = ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(email);
+    if (!isAdmin) {
+      // Not a platform admin — sign out and show the restricted screen.
+      await supabase.auth.signOut();
+      setAuth({ status: "denied", email });
+      return;
+    }
+    setAuth({ status: "authorized", accessToken: session.access_token, email });
+  }, []);
 
   useEffect(() => {
     // Check for existing Supabase session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setAuthed(true);
-      }
-      setChecking(false);
+      applySession(session);
     });
+  }, [applySession]);
+
+  const handleAuthSuccess = useCallback(async () => {
+    // Re-read the fresh session established by the login gate.
+    const { data: { session } } = await supabase.auth.getSession();
+    applySession(session);
+  }, [applySession]);
+
+  const handleNotAuthorized = useCallback(async () => {
+    await supabase.auth.signOut();
+    setAuth({ status: "denied", email: "" });
   }, []);
 
-  const handleAuthSuccess = useCallback(() => {
-    setAuthed(true);
-  }, []);
-
-  if (checking) {
+  if (auth.status === "checking") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-warm-cream">
         <div className="flex items-center gap-3 text-gray-500">
@@ -1057,9 +1193,33 @@ function AdminPage() {
     );
   }
 
-  if (!authed) {
+  if (auth.status === "signedOut") {
     return <AdminLoginGate onSuccess={handleAuthSuccess} />;
   }
 
-  return <Dashboard />;
+  if (auth.status === "denied") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-warm-cream px-4">
+        <div className="w-full max-w-md rounded-2xl border border-gray-200/70 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-bold tracking-tight text-charcoal">Access Restricted</h1>
+          <p className="mt-3 text-sm text-gray-600">
+            Not authorized — this area is restricted to platform administrators.
+          </p>
+          <a
+            href="/"
+            className="mt-6 inline-block rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover cursor-pointer"
+          >
+            Back to Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Dashboard
+      accessToken={auth.accessToken}
+      onNotAuthorized={handleNotAuthorized}
+    />
+  );
 }
