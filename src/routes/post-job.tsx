@@ -5,6 +5,7 @@ import { sql } from "~/db";
 import { supabase } from "~/lib/supabase";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
+import { TRADES } from "~/lib/trades";
 import { hasActivePlan } from "~/lib/payment-server";
 
 /* ------------------------------------------------------------------ */
@@ -41,19 +42,6 @@ const ensureTable = createServerFn().handler(async () => {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const TRADES = [
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Carpentry",
-  "Welding",
-  "Masonry",
-  "Roofing",
-  "Sheet Metal",
-  "Painting",
-  "Solar Installation",
-  "Other",
-];
 
 interface FormData {
   company_name: string;

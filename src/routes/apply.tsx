@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { sql } from "~/db";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
+import { TRADES } from "~/lib/trades";
 
 /* ------------------------------------------------------------------ */
 /*  Server functions                                                   */
@@ -32,20 +33,6 @@ const ensureTable = createServerFn().handler(async () => {
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
-
-const TRADES = [
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Carpentry",
-  "Welding",
-  "Masonry",
-  "Roofing",
-  "Sheet Metal",
-  "Painting",
-  "Solar Installation",
-  "Other",
-];
 
 const EXPERIENCE_LEVELS = [
   "None — just starting",
