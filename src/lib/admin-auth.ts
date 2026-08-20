@@ -29,17 +29,15 @@ function getAdminClient() {
 }
 
 /**
- * Verify that the incoming request is authenticated as a platform admin.
+ * Verify the caller's `Authorization: Bearer <access_token>` against Supabase
+ * and return the authenticated user.
  *
- * Reads the `Authorization: Bearer <access_token>` header, verifies the token
- * server-side via Supabase `auth.getUser`, extracts the user's email, and admits
- * the request only if that email is in ADMIN_EMAILS.
+ * - missing/invalid token -> `{ ok: false, response }` with HTTP 401
+ * - valid token           -> `{ ok: true, userId, email }`
  *
- * - missing/invalid token  -> `{ ok: false, response }` with HTTP 401
- * - valid token, not admin -> `{ ok: false, response }` with HTTP 403
- * - valid token, admin     -> `{ ok: true, userId, email }`
+ * `email` is the user's email on their Supabase user object (lowercased/trimmed).
  */
-export async function requireAdmin(
+export async function getUserFromRequest(
   request: Request,
 ): Promise<
   | { ok: true; userId: string; email: string }
@@ -86,7 +84,29 @@ export async function requireAdmin(
   }
 
   const email = (data.user.email ?? "").toLowerCase().trim();
-  if (!ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(email)) {
+  return { ok: true, userId: data.user.id, email };
+}
+
+/**
+ * Verify that the incoming request is authenticated as a platform admin.
+ *
+ * Builds on `getUserFromRequest`, then admits the request only if the user's
+ * email is in ADMIN_EMAILS.
+ *
+ * - missing/invalid token  -> `{ ok: false, response }` with HTTP 401
+ * - valid token, not admin -> `{ ok: false, response }` with HTTP 403
+ * - valid token, admin     -> `{ ok: true, userId, email }`
+ */
+export async function requireAdmin(
+  request: Request,
+): Promise<
+  | { ok: true; userId: string; email: string }
+  | { ok: false; response: Response }
+> {
+  const auth = await getUserFromRequest(request);
+  if (!auth.ok) return auth;
+
+  if (!ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(auth.email)) {
     return {
       ok: false,
       response: new Response(
@@ -96,5 +116,5 @@ export async function requireAdmin(
     };
   }
 
-  return { ok: true, userId: data.user.id, email };
+  return { ok: true, userId: auth.userId, email: auth.email };
 }
