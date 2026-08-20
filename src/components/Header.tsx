@@ -74,6 +74,9 @@ export function Header() {
           <a href="/pricing" className="transition-colors hover:text-charcoal">
             Pricing
           </a>
+          <a href="/schools" className="transition-colors hover:text-charcoal">
+            For Schools
+          </a>
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs">
             <a
               href="/apply"
@@ -164,6 +167,9 @@ export function Header() {
             </a>
             <a href="/pricing" onClick={() => setMobileOpen(false)} className="hover:text-charcoal">
               Pricing
+            </a>
+            <a href="/schools" onClick={() => setMobileOpen(false)} className="hover:text-charcoal">
+              For Schools
             </a>
             <div className="flex gap-2 pt-2">
               <a
