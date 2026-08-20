@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/create-checkout")({
         try {
           const session = await stripe.checkout.sessions.create({
             mode: "subscription",
-            line_items: [{ price: "price_1U1AdpL0z9KENGAOCUTqiwZQ", quantity: 1 }],
+            line_items: [{ price: "price_1U1TKhL0z9KENGAOYozgk5g6", quantity: 1 }],
             success_url: successUrl,
             cancel_url: cancelUrl,
             client_reference_id: userId,
