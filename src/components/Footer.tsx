@@ -15,6 +15,9 @@ export function Footer() {
             <a href="/apply" className="transition-colors hover:text-white">
               Browse Jobs
             </a>
+            <a href="/schools" className="transition-colors hover:text-white">
+              For Schools
+            </a>
             <a href="/terms" className="transition-colors hover:text-white">
               Terms of Service
             </a>
