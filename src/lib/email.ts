@@ -133,6 +133,42 @@ export async function notifyNewApplication(data: {
   });
 }
 
+export async function notifyNewSchool(data: {
+  name: string;
+  contact_name: string;
+  contact_email: string;
+  phone: string;
+  trades: string;
+  student_count_estimate: string;
+  city: string;
+  state: string;
+  description: string;
+  message: string;
+}) {
+  const html = `
+    <h2 style="color:#c2410c;">New School Partner Application</h2>
+    <table style="border-collapse:collapse;width:100%;max-width:500px;">
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">School</td><td style="padding:6px 12px;">${escapeHtml(data.name)}</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">Contact</td><td style="padding:6px 12px;">${escapeHtml(data.contact_name)}</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">Email</td><td style="padding:6px 12px;"><a href="mailto:${escapeHtml(data.contact_email)}">${escapeHtml(data.contact_email)}</a></td></tr>
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">Phone</td><td style="padding:6px 12px;">${escapeHtml(data.phone || "—")}</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">Trades</td><td style="padding:6px 12px;">${escapeHtml(data.trades)}</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">Students (est.)</td><td style="padding:6px 12px;">${escapeHtml(data.student_count_estimate || "—")}</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:bold;color:#333;">City / State</td><td style="padding:6px 12px;">${escapeHtml(data.city)}${data.state ? `, ${escapeHtml(data.state)}` : ""}</td></tr>
+    </table>
+    ${data.description ? `<p style="color:#555;margin-top:16px;"><strong>Description:</strong><br/>${escapeHtml(data.description)}</p>` : ""}
+    ${data.message ? `<p style="color:#555;margin-top:16px;"><strong>Message:</strong><br/>${escapeHtml(data.message)}</p>` : ""}
+    <p style="color:#999;font-size:12px;margin-top:24px;">
+      <a href="https://www.tradelaunch.work/admin" style="color:#c2410c;">View in Admin Dashboard</a>
+    </p>
+  `;
+
+  return sendEmail({
+    subject: `New School Partner Application: ${data.name}`,
+    html,
+  });
+}
+
 export async function notifyNewContact(data: {
   name: string;
   email: string;

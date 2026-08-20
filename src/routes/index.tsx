@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "~/components/Header";
 import { Footer } from "~/components/Footer";
+import { TRADES } from "~/lib/trades";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -108,18 +109,6 @@ const FEATURES = [
   },
 ];
 
-const TRADES = [
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Carpentry",
-  "Welding",
-  "Masonry",
-  "Roofing",
-  "Sheet Metal",
-  "Painting",
-  "Solar Installation",
-];
 
 /* ------------------------------------------------------------------ */
 /*  Section components                                                 */
