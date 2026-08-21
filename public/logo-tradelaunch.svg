@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c2410c"/>
+      <stop offset="100%" stop-color="#d95a1e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- White rounded-square background -->
+  <rect width="512" height="512" rx="80" fill="#ffffff"/>
+
+  <!-- 
+    Bold geometric "TL" monogram with upward-launch arrow accent.
+    All letterforms built from rectangles for a clean, modern look.
+  -->
+
+  <!-- T: tall vertical stem -->
+  <rect x="140" y="100" width="68" height="312" rx="16" fill="url(#brandGrad)"/>
+
+  <!-- T: horizontal crossbar -->
+  <rect x="82" y="100" width="290" height="56" rx="16" fill="url(#brandGrad)"/>
+
+  <!-- Upward arrow integrated into T's crossbar right side -->
+  <path d="M310 100 L310 156 L380 96 L380 60 Z" fill="url(#brandGrad)"/>
+
+  <!-- Arrowhead -->
+  <path d="M350 24 L380 60 L410 36 L380 0 Z" fill="url(#brandGrad)"/>
+
+  <!-- L: vertical stem (overlaps T's right side slightly) -->
+  <rect x="222" y="188" width="62" height="224" rx="16" fill="url(#brandGrad)"/>
+
+  <!-- L: horizontal base -->
+  <rect x="222" y="356" width="164" height="56" rx="16" fill="url(#brandGrad)"/>
+
+  <!-- Small accent: bottom-right corner cutout to differentiate L -->
+  <rect x="370" y="356" width="16" height="56" rx="8" fill="#ffffff"/>
+</svg>

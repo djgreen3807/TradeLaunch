@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/school-public")({
           const db = sql();
           await ensureSchoolSchema(db);
           const rows = (await db`
-            SELECT id, name, slug, description, trades, city, state, website
+            SELECT id, name, slug, description, trades, city, state, website, logo_url
             FROM schools
             WHERE slug = ${slug} AND status = 'approved'
             LIMIT 1
@@ -49,6 +49,7 @@ export const Route = createFileRoute("/api/school-public")({
               city: (school.city as string | null) ?? null,
               state: (school.state as string | null) ?? null,
               website: (school.website as string | null) ?? null,
+              logo_url: (school.logo_url as string | null) ?? null,
             }),
             { status: 200, headers: { "Content-Type": "application/json" } },
           );

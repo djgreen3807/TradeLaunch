@@ -284,16 +284,35 @@ function AnalyticsPanel({ analytics }: { analytics: Analytics }) {
   );
 }
 
-function ProfilePlaceholder() {
+function ProfileSection({ slug }: { slug: string | null }) {
   return (
     <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm sm:p-8">
       <h2 className="text-xl font-semibold text-charcoal">Profile</h2>
       <p className="mt-1 text-sm text-gray-600">
-        Update your school's public profile and details.
+        View your school's public profile and update its details.
       </p>
-      <span className="mt-4 inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
-        Coming soon
-      </span>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <a
+          href="/school/profile"
+          className="inline-flex items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover cursor-pointer"
+        >
+          Edit profile
+        </a>
+        {slug ? (
+          <a
+            href={`/schools/${slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 cursor-pointer"
+          >
+            View public profile
+          </a>
+        ) : (
+          <span className="inline-flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-400">
+            Public profile
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -375,7 +394,7 @@ function SchoolDashboard({ school, accessToken }: { school: SchoolInfo; accessTo
             )}
           </SectionCard>
 
-          <ProfilePlaceholder />
+          <ProfileSection slug={school.slug} />
         </div>
       </main>
       <Footer />
