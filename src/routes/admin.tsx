@@ -738,6 +738,8 @@ function MatchModal({
   apps,
   preselectedJobId,
   preselectedAppId,
+  accessToken,
+  onNotAuthorized,
   onClose,
   onMatched,
 }: {
@@ -745,6 +747,8 @@ function MatchModal({
   apps: ApprenticeApplication[];
   preselectedJobId: string | null;
   preselectedAppId: string | null;
+  accessToken: string;
+  onNotAuthorized: () => void;
   onClose: () => void;
   onMatched: () => void;
 }) {
@@ -762,23 +766,22 @@ function MatchModal({
     setCreating(true);
     setError("");
     try {
-      const res = await fetch("/api/create-match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await gatedFetch<{ success?: boolean; error?: string }>(
+        "/api/create-match",
+        accessToken,
+        {
           job_posting_id: selectedJob,
           application_id: selectedApp,
-        }),
-      });
-      const data = (await res.json()) as { success?: boolean; error?: string };
-      if (res.ok && data.success) {
+        },
+      );
+      if (data.success) {
         // Also update the application status to "matched" (the endpoint does
         // this itself; this is a harmless backstop to keep behavior identical)
-        await fetch("/api/update-application-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: selectedApp, status: "matched" }),
-        }).catch(() => {});
+        await gatedFetch<{ success?: boolean }>(
+          "/api/update-application-status",
+          accessToken,
+          { id: selectedApp, status: "matched" },
+        ).catch(() => {});
         setSuccess("Match created!");
         setTimeout(() => {
           onMatched();
@@ -787,8 +790,12 @@ function MatchModal({
       } else {
         setError(data.error ?? "Failed to create match");
       }
-    } catch {
-      setError("Network error");
+    } catch (err) {
+      if (err instanceof NotAuthorizedError) {
+        onNotAuthorized();
+      } else {
+        setError("Network error");
+      }
     } finally {
       setCreating(false);
     }
@@ -919,19 +926,21 @@ function Dashboard({
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)),
     );
     try {
-      const res = await fetch("/api/update-application-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: newStatus }),
-      });
-      const data = (await res.json()) as { success?: boolean };
-      if (!res.ok || !data.success) {
+      const data = await gatedFetch<{ success?: boolean }>(
+        "/api/update-application-status",
+        accessToken,
+        { id, status: newStatus },
+      );
+      if (!data.success) {
         // Revert on failure
         setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status: a.status } : a)));
       }
-    } catch {
-      // Revert on network error
+    } catch (err) {
+      // Revert on error
       setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status: a.status } : a)));
+      if (err instanceof NotAuthorizedError) {
+        onNotAuthorized();
+      }
     }
   };
 
@@ -1119,6 +1128,8 @@ function Dashboard({
           apps={applications}
           preselectedJobId={matchModal.jobId}
           preselectedAppId={matchModal.appId}
+          accessToken={accessToken}
+          onNotAuthorized={onNotAuthorized}
           onClose={() => setMatchModal(null)}
           onMatched={handleMatchCreated}
         />
