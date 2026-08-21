@@ -44,4 +44,13 @@ export async function ensureSchoolSchema(db: Db): Promise<void> {
       UNIQUE (user_id)
     )
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS student_profiles (
+      user_id UUID PRIMARY KEY,
+      full_name TEXT,
+      trade TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
 }
