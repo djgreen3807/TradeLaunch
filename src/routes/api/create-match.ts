@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sql } from "~/db";
+import { requireAdmin } from "~/lib/admin-auth";
 
 export const Route = createFileRoute("/api/create-match")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const auth = await requireAdmin(request);
+        if (!auth.ok) return auth.response;
         let body: Record<string, unknown>;
         try {
           body = await request.json();
