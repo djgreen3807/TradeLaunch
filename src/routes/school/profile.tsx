@@ -68,7 +68,7 @@ function SignInScreen() {
           Sign in to continue to your School Partner dashboard.
         </p>
         <Link
-          to="/login"
+          to="/school/login"
           className="mt-6 inline-block rounded-xl bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover cursor-pointer"
         >
           Sign in
