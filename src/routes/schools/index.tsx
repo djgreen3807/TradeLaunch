@@ -125,7 +125,7 @@ function SchoolsHero() {
             Become a School Partner
           </a>
           <a
-            href="/login"
+            href="/school/login"
             className="inline-flex rounded-xl border-2 border-brand bg-transparent px-8 py-3.5 text-base font-semibold text-brand transition-all hover:bg-brand-light"
           >
             School Sign In
